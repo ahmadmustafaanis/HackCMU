@@ -12,21 +12,24 @@
     "seed": "tsx src/seed/run.ts"
   },
   "dependencies": {
-    "shared-types": "^0.1.0",
-    "express": "^4.21.0",
+    "@google/genai": "^0.15.0",
     "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0",
+    "google-auth-library": "^9.15.1",
+    "jsonwebtoken": "^9.0.3",
     "mongodb": "^6.10.0",
     "mongodb-memory-server": "^10.1.2",
-    "zod": "^3.23.8",
-    "@google/genai": "^0.15.0",
-    "dotenv": "^16.4.5"
+    "shared-types": "^0.1.0",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
-    "typescript": "^5.6.0",
-    "tsx": "^4.19.0",
-    "vitest": "^2.1.0",
-    "@types/express": "^4.17.21",
     "@types/cors": "^2.8.17",
-    "@types/node": "^22.7.0"
+    "@types/express": "^4.17.21",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^22.7.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
   }
 }
