@@ -5,6 +5,30 @@ landed without reconstructing it from the diff.
 
 Newest entries go at the top. Keep each entry short: intent, files, follow-ups.
 
+## 2026-09-12 — Real OpenStreetMap under the campus heatmap
+
+- Replaced the abstract SVG blobs with Leaflet + OSM tiles so Discover/Home
+  show actual campus streets. Activity density is a `leaflet.heat` overlay;
+  tapping a building still filters. “Show my location” uses the browser
+  Geolocation API (no Mapbox/Google key).
+- Files: `apps/web/package.json` (`leaflet`, `react-leaflet`, `leaflet.heat`),
+  `CampusHeatmap.tsx`, `index.css`, `Home.tsx`
+- Follow-up: geolocation needs user permission; off-campus users stay framed
+  on CMU until they recenter.
+
+## 2026-09-12 — Interactive campus heatmap on Discover / Home trending
+
+- Discover and Home now plot open events as an SVG campus heatmap. Tapping a
+  hot spot filters Discover (and Home navigates to `/discover?location=`).
+  Blob size/color follow how many people have joined at that location.
+- `Activity` gained optional `locationId` / `lat` / `lng`; `GET /api/activities`
+  fills them from `locations.json`. No map SDK or API key.
+- Files: `packages/shared-types/src/domain.ts`, `apps/api/src/routes/activities.route.ts`,
+  `apps/web/src/components/CampusHeatmap.tsx`, `Discover.tsx`, `Home.tsx`,
+  `ActivityFeedCard.tsx`
+- Follow-up: heat is event-based, not live GPS; walking times are still the
+  placeholder 5 min.
+
 ## 2026-09-12 — Agent changelog + Discover heatmap tracking
 
 - Added this changelog, a PR template, `AGENTS.md`, and a Cursor rule so

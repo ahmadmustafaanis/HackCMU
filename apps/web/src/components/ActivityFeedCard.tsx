@@ -14,13 +14,18 @@ const STATUS_LABEL: Record<Activity["status"], string> = {
 
 interface ActivityFeedCardProps {
   activity: Activity;
+  highlighted?: boolean;
 }
 
-export default function ActivityFeedCard({ activity }: ActivityFeedCardProps) {
+export default function ActivityFeedCard({ activity, highlighted = false }: ActivityFeedCardProps) {
   const spotsLeft = Math.max(activity.capacity - activity.attendeeCount, 0);
 
   return (
-    <div className="flex flex-col gap-2 rounded-2xl border border-line bg-card p-4 shadow-sm">
+    <div
+      className={`flex flex-col gap-2 rounded-2xl border bg-card p-4 shadow-sm ${
+        highlighted ? "border-primary ring-2 ring-primary/20" : "border-line"
+      }`}
+    >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-ink">{activity.title}</p>

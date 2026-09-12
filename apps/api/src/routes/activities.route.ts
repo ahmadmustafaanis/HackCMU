@@ -15,8 +15,12 @@ import { requireAuth } from "../auth/requireAuth.js";
 import { locations } from "../config/index.js";
 import { getMatchById, updateMatchStatus } from "../matches/matchesService.js";
 
+function locationById(locationId: string) {
+  return locations.find((l) => l.id === locationId);
+}
+
 function locationName(locationId: string): string {
-  return locations.find((l) => l.id === locationId)?.name ?? locationId;
+  return locationById(locationId)?.name ?? locationId;
 }
 
 function formatTimeLabel(startIso: string, endIso: string): string {
@@ -55,12 +59,16 @@ function toActivityStatus(status: EventStatus): ActivityStatus {
 const PLACEHOLDER_WALKING_MINUTES = 5;
 
 function toActivity(event: EventRecord): Activity {
+  const loc = locationById(event.locationId);
   return {
     id: event.id,
     title: event.title,
     type: event.canonicalActivity,
     description: event.description ?? `${capitalize(event.canonicalActivity)} at ${locationName(event.locationId)}`,
     approximateLocation: locationName(event.locationId),
+    locationId: event.locationId,
+    lat: loc?.lat,
+    lng: loc?.lng,
     timeLabel: formatTimeLabel(event.startTime, event.endTime),
     walkingMinutes: PLACEHOLDER_WALKING_MINUTES,
     attendees: event.participantIds,

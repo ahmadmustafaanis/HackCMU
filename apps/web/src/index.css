@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
 
 @theme {
   --color-primary: #7a2338;
@@ -50,4 +51,15 @@ body {
     box-shadow: 0 20px 60px -20px rgba(32, 26, 28, 0.35);
     overflow: hidden;
   }
+}
+
+.leaflet-container {
+  height: 100%;
+  width: 100%;
+  font: inherit;
+  background: #faf7f5;
+}
+
+.leaflet-control-attribution {
+  font-size: 9px;
 }
