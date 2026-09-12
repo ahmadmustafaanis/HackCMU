@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import type { Activity } from "shared-types";
 import { api } from "../api/client";
 import TabBar from "../components/TabBar";
@@ -48,6 +49,7 @@ function matchesCategory(activity: Activity, category: CategoryFilter): boolean 
 }
 
 export default function Discover() {
+  const navigate = useNavigate();
   const [activities, setActivities] = useState<Activity[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -201,7 +203,7 @@ export default function Discover() {
 
           {!loading &&
             !error &&
-            filtered.map((activity) => <ActivityFeedCard key={activity.id} activity={activity} />)}
+            filtered.map((activity) => <ActivityFeedCard key={activity.id} activity={activity} onClick={() => navigate(`/meetup/${activity.id}`)} />)}
         </div>
       </div>
       <TabBar />

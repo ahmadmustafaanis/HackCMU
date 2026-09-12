@@ -14,13 +14,14 @@ const STATUS_LABEL: Record<Activity["status"], string> = {
 
 interface ActivityFeedCardProps {
   activity: Activity;
+  onClick?: () => void;
 }
 
-export default function ActivityFeedCard({ activity }: ActivityFeedCardProps) {
+export default function ActivityFeedCard({ activity, onClick }: ActivityFeedCardProps) {
   const spotsLeft = Math.max(activity.capacity - activity.attendeeCount, 0);
 
   return (
-    <div className="flex flex-col gap-2 rounded-2xl border border-line bg-card p-4 shadow-sm">
+    <button type="button" onClick={onClick} className="flex flex-col gap-2 rounded-2xl border border-line bg-card p-4 text-left shadow-sm">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-ink">{activity.title}</p>
@@ -48,6 +49,6 @@ export default function ActivityFeedCard({ activity }: ActivityFeedCardProps) {
           {activity.status === "open" && spotsLeft > 0 ? ` · ${spotsLeft} spot${spotsLeft === 1 ? "" : "s"} left` : ""}
         </span>
       </div>
-    </div>
+    </button>
   );
 }

@@ -28,6 +28,24 @@ describe("MongoIdempotencyStore", () => {
     expect(b).toBe("result-1");
   });
 
+  it("waits for a slow owner instead of failing the duplicate caller", async () => {
+    const store = new MongoIdempotencyStore();
+    let counter = 0;
+    const fn = async (): Promise<string> => {
+      counter += 1;
+      await new Promise((resolve) => setTimeout(resolve, 2_100));
+      return "slow-result";
+    };
+
+    const owner = store.runOnce("slow-key", 60_000, fn);
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    const duplicate = store.runOnce("slow-key", 60_000, fn);
+
+    await expect(duplicate).resolves.toBe("slow-result");
+    await expect(owner).resolves.toBe("slow-result");
+    expect(counter).toBe(1);
+  }, 10_000);
+
   it("runs fn independently for two different keys", async () => {
     const store = new MongoIdempotencyStore();
     let counterA = 0;

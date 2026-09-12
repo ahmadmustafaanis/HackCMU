@@ -2,6 +2,7 @@ import { Router } from "express";
 import type { RecommendRequest, RecommendResponse, RecommendedCandidate, RecommendationService } from "shared-types";
 import { locations } from "../config/index.js";
 import { buildNormalizedIntent } from "../matching/intent/buildNormalizedIntent.js";
+import { resolveExplicitOrRelativeTime } from "../matching/time/resolveTime.js";
 
 /** Only accepts an already-absolute time (e.g. an ISO string a date picker
  * produced). Relative-phrase parsing ("in 30 minutes") is deterministic
@@ -37,10 +38,12 @@ export function createRecommendRouter(deps: { recommendationService: Recommendat
   router.post("/", async (req, res, next) => {
     try {
       const body = req.body as RecommendRequest;
+      const resolvedTime = resolveExplicitOrRelativeTime(body.time, new Date());
       const intent = buildNormalizedIntent({
         activityIds: body.activityIds,
         locationIds: body.locationIds,
-        startTime: parseAbsoluteTime(body.time),
+        startTime: resolvedTime?.startTime ?? parseAbsoluteTime(body.time),
+        endTime: resolvedTime?.endTime,
       });
 
       const scored = await deps.recommendationService.recommend(intent);

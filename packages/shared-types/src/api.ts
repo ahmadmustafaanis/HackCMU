@@ -123,3 +123,14 @@ export type FeedbackResponse = { ok: true };
 export interface ConnectionsResponse {
   connections: Match[];
 }
+
+export interface DebugCollection {
+  name: string;
+  count: number;
+  documents: Record<string, unknown>[];
+}
+
+export interface DebugDatabaseResponse {
+  database: string;
+  collections: DebugCollection[];
+}
