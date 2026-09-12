@@ -1,0 +1,20 @@
+---
+description: Every PR must record what changed in AGENT_CHANGELOG.md
+alwaysApply: true
+---
+
+# Agent changelog
+
+Before finishing a PR or substantial change, append a short dated entry at
+the top of `AGENT_CHANGELOG.md`.
+
+Include:
+
+- what changed and why
+- the main files
+- follow-ups the next agent needs
+
+Also tick the changelog checkbox in `.github/PULL_REQUEST_TEMPLATE.md`.
+
+Do not skip this for “small” PRs. Other agents use the file as the running
+history of the repo.

@@ -115,6 +115,9 @@ Users can:
 - `/feedback/:eventId` submits a `great`, `good`, or `okay` rating.
 - `/success/:matchId` is the post-action confirmation surface.
 - `/discover` shows open/trending activities from `GET /api/activities`.
+  Stretch: an interactive campus heatmap of open-event density (not built yet;
+  `Activity` still exposes location as a name string, while lat/lng live in
+  `apps/api/src/config/locations.json`).
 - `/connections` loads accepted/connected relationships.
 - `/profile` shows the current student profile and session controls.
 
