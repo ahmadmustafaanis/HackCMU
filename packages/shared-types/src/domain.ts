@@ -46,6 +46,8 @@ export interface Student {
   /** Uber-style mean of peer ratings (1–5). Omitted until someone has been rated. */
   ratingAverage?: number;
   ratingCount?: number;
+  /** True once the onboarding wizard has been saved for this account. */
+  onboardingCompleted?: boolean;
 }
 
 export type MatchStatus = "suggested" | "invited" | "accepted" | "connected";
