@@ -1,5 +1,6 @@
 import { Router } from "express";
 import type { MatchRequest, MatchResponse, Match, MatchingService, ScoreBreakdown, UserProfileService } from "shared-types";
+import { requireAuth } from "../auth/requireAuth.js";
 import { buildNormalizedIntent } from "../matching/intent/buildNormalizedIntent.js";
 import type { IdempotencyRunner } from "../matching/matchingService.js";
 import { buildMatchReasons, createMatch } from "../matches/matchesService.js";
@@ -39,7 +40,7 @@ function hashString(input: string): string {
  * Its *join* is deduped internally, but this route's own side effect
  * (inserting a Match bookkeeping row per participant) would otherwise run
  * unconditionally on every call and visibly duplicate cards in the UI. */
-function deriveRouteIdempotencyKey(body: MatchRequest, now: Date): string {
+function deriveRouteIdempotencyKey(userId: string, body: MatchRequest, now: Date): string {
   const bucket = Math.floor(now.getTime() / 60_000);
   const raw = JSON.stringify({
     activityIds: [...body.intent.activityIds].sort(),
@@ -47,7 +48,7 @@ function deriveRouteIdempotencyKey(body: MatchRequest, now: Date): string {
     text: body.intent.text ?? null,
     time: body.intent.time ?? null,
   });
-  return `match-route:${body.userId}:${bucket}:${hashString(raw)}`;
+  return `match-route:${userId}:${bucket}:${hashString(raw)}`;
 }
 
 export function createMatchRouter(deps: {
@@ -57,14 +58,16 @@ export function createMatchRouter(deps: {
 }): Router {
   const router = Router();
 
-  // POST /api/match — core authoritative path.
-  router.post("/", async (req, res, next) => {
+  // POST /api/match — core authoritative path. requireAuth: the acting user
+  // is ALWAYS the verified session's userId, never a client-supplied field.
+  router.post("/", requireAuth, async (req, res, next) => {
     try {
+      const userId = req.userId!;
       const body = req.body as MatchRequest;
       const now = new Date();
       const routeKey = body.idempotencyKey
         ? `match-route:client:${body.idempotencyKey}`
-        : deriveRouteIdempotencyKey(body, now);
+        : deriveRouteIdempotencyKey(userId, body, now);
 
       const response = await deps.idempotencyRunner.runOnce(routeKey, 60_000, async (): Promise<MatchResponse> => {
         const intent = buildNormalizedIntent({
@@ -79,10 +82,10 @@ export function createMatchRouter(deps: {
           ? { ...intent, startTime: resolvedTime.startTime, endTime: resolvedTime.endTime }
           : intent;
 
-        const result = await deps.matchingService.match(body.userId, resolvedIntent, body.idempotencyKey);
+  const result = await deps.matchingService.match(userId, resolvedIntent, body.idempotencyKey);
 
-        const requester = await deps.userProfileService.getProfile(body.userId).catch(() => null);
-        const otherParticipantIds = result.event.participantIds.filter((id) => id !== body.userId);
+        const requester = await deps.userProfileService.getProfile(userId).catch(() => null);
+        const otherParticipantIds = result.event.participantIds.filter((id) => id !== userId);
         const breakdown: ScoreBreakdown | undefined = result.breakdown;
 
         const matches: Match[] = [];
@@ -90,7 +93,7 @@ export function createMatchRouter(deps: {
           const participant = await deps.userProfileService.getProfile(participantId).catch(() => null);
           const shared = requester && participant ? intersect(requester.interests, participant.interests) : [];
           const match = await createMatch({
-            ownerId: body.userId,
+            ownerId: userId,
             studentId: participantId,
             activityType: result.event.canonicalActivity,
             score: result.score ?? 0,

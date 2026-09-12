@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import type { Activity } from "shared-types";
 import { api } from "../api/client";
-import TabBar from "../components/TabBar";
 import ActivityFeedCard from "../components/ActivityFeedCard";
+import CampusHeatmap from "../components/CampusHeatmap";
+import TabBar from "../components/TabBar";
 
 type WhenFilter = "all" | "now" | "hour" | "later" | "week";
 type CategoryFilter = "all" | "food" | "study" | "fitness" | "coffee" | "social";
@@ -50,14 +51,28 @@ function matchesCategory(activity: Activity, category: CategoryFilter): boolean 
 
 export default function Discover() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [activities, setActivities] = useState<Activity[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const [search, setSearch] = useState("");
   const [when, setWhen] = useState<WhenFilter>("all");
-  const [location, setLocation] = useState<string>("all");
+  const [location, setLocation] = useState<string>(searchParams.get("location") ?? "all");
   const [category, setCategory] = useState<CategoryFilter>("all");
+
+  useEffect(() => {
+    setLocation(searchParams.get("location") ?? "all");
+  }, [searchParams]);
+
+  const setLocationFilter = (next: string) => {
+    const value = next || "all";
+    setLocation(value);
+    const nextParams = new URLSearchParams(searchParams);
+    if (value === "all") nextParams.delete("location");
+    else nextParams.set("location", value);
+    setSearchParams(nextParams, { replace: true });
+  };
 
   const load = () => {
     setLoading(true);
@@ -72,26 +87,38 @@ export default function Discover() {
   useEffect(load, []);
 
   const locations = useMemo(() => {
-    const set = new Set<string>();
-    (activities ?? []).forEach((a) => set.add(a.approximateLocation));
-    return Array.from(set);
+    const byId = new Map<string, string>();
+    (activities ?? []).forEach((a) => {
+      const id = a.locationId ?? a.approximateLocation;
+      byId.set(id, a.approximateLocation);
+    });
+    return Array.from(byId.entries()).map(([id, name]) => ({ id, name }));
   }, [activities]);
 
-  const filtered = useMemo(() => {
+  const matchesLocation = (activity: Activity, locationFilter: string) => {
+    if (locationFilter === "all") return true;
+    return (activity.locationId ?? activity.approximateLocation) === locationFilter;
+  };
+
+  const preMapFiltered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return (activities ?? []).filter((a) => {
       if (q && !`${a.title} ${a.description}`.toLowerCase().includes(q)) return false;
       if (!matchesWhen(a, when)) return false;
-      if (location !== "all" && a.approximateLocation !== location) return false;
       if (!matchesCategory(a, category)) return false;
       return true;
     });
-  }, [activities, search, when, location, category]);
+  }, [activities, search, when, category]);
+
+  const filtered = useMemo(
+    () => preMapFiltered.filter((a) => matchesLocation(a, location)),
+    [preMapFiltered, location],
+  );
 
   const clearFilters = () => {
     setSearch("");
     setWhen("all");
-    setLocation("all");
+    setLocationFilter("all");
     setCategory("all");
   };
 
@@ -133,7 +160,7 @@ export default function Discover() {
           <div className="flex gap-2 overflow-x-auto pb-1">
             <button
               type="button"
-              onClick={() => setLocation("all")}
+              onClick={() => setLocationFilter("all")}
               className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
                 location === "all" ? "border-primary bg-primary text-white" : "border-line bg-card text-ink hover:border-primary-light"
               }`}
@@ -141,17 +168,17 @@ export default function Discover() {
               All Locations
             </button>
             {locations.map((loc) => {
-              const active = location === loc;
+              const active = location === loc.id;
               return (
                 <button
-                  key={loc}
+                  key={loc.id}
                   type="button"
-                  onClick={() => setLocation(active ? "all" : loc)}
+                  onClick={() => setLocationFilter(active ? "all" : loc.id)}
                   className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
                     active ? "border-primary bg-primary text-white" : "border-line bg-card text-ink hover:border-primary-light"
                   }`}
                 >
-                  📍 {loc}
+                  📍 {loc.name}
                 </button>
               );
             })}
@@ -175,6 +202,12 @@ export default function Discover() {
             );
           })}
         </div>
+
+        <CampusHeatmap
+          activities={preMapFiltered}
+          selectedLocationId={location}
+          onSelectLocation={(id) => setLocationFilter(id ?? "all")}
+        />
 
         <div className="flex flex-col gap-3">
           {loading && <p className="py-6 text-center text-sm text-muted">Loading activities…</p>}
@@ -203,7 +236,14 @@ export default function Discover() {
 
           {!loading &&
             !error &&
-            filtered.map((activity) => <ActivityFeedCard key={activity.id} activity={activity} onClick={() => navigate(`/meetup/${activity.id}`)} />)}
+            filtered.map((activity) => (
+              <ActivityFeedCard
+                key={activity.id}
+                activity={activity}
+                onClick={() => navigate(`/meetup/${activity.id}`)}
+                highlighted={location !== "all" && (activity.locationId ?? activity.approximateLocation) === location}
+              />
+            ))}
         </div>
       </div>
       <TabBar />

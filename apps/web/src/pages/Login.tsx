@@ -2,19 +2,34 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Button from "../components/Button";
 import Card from "../components/Card";
+import GoogleSignInButton from "../components/GoogleSignInButton";
 import { api } from "../api/client";
 import { useSession } from "../state/session";
 
 /** Lightweight fallback screen at /login — the primary entry point is
- * Welcome's own "Continue with CMU" button, but this route offers the same
- * mock CMU sign-in action for anyone who lands here directly. */
+ * Welcome's own sign-in options, but this route offers the same choices for
+ * anyone who lands here directly. */
 export default function Login() {
   const navigate = useNavigate();
   const { setSession } = useSession();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleLogin = async () => {
+  const handleGoogleCredential = async (idToken: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { student, sessionToken } = await api.googleLogin(idToken);
+      setSession(student, sessionToken);
+      navigate("/onboarding");
+    } catch {
+      setError("Google sign-in failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGuestLogin = async () => {
     setLoading(true);
     setError(null);
     try {
@@ -34,10 +49,19 @@ export default function Login() {
         <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-2xl">🐾</div>
         <div>
           <h1 className="text-xl font-semibold text-ink">Sign in to Scotty&apos;s Circle</h1>
-          <p className="mt-1 text-sm text-muted">Use your CMU identity to continue.</p>
+          <p className="mt-1 text-sm text-muted">Use your Google account to continue.</p>
         </div>
-        <Button onClick={handleLogin} disabled={loading} className="w-full">
-          {loading ? "Signing in…" : "Continue with CMU"}
+
+        <GoogleSignInButton onCredential={handleGoogleCredential} />
+
+        <div className="flex w-full items-center gap-3 text-xs text-muted">
+          <span className="h-px flex-1 bg-line" />
+          or
+          <span className="h-px flex-1 bg-line" />
+        </div>
+
+        <Button onClick={handleGuestLogin} disabled={loading} variant="secondary" className="w-full">
+          {loading ? "Signing in…" : "Continue as Guest (demo)"}
         </Button>
         {error && <p className="text-sm text-primary">{error}</p>}
       </Card>

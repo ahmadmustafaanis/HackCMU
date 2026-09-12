@@ -7,7 +7,8 @@ React + Vite + TypeScript + Tailwind CSS. Mobile-first: design for a
 ## Structure
 
 - `src/pages/` — one component per screen (see the plan's screen map: Welcome, Login, onboarding wizard, Home, Activity Setup, Matching, Match Results, Person, Chat, Meetup, Feedback, Success, Discover, Connections, Profile).
-- `src/components/` — shared UI (Card, Button, ActivityButtonGrid, PersonCard, ChatBubble, TabBar).
+- `src/components/` — shared UI (Card, Button, ActivityButtonGrid, PersonCard, ChatBubble, TabBar, CampusHeatmap).
+  `CampusHeatmap` uses Leaflet + OpenStreetMap (no paid map key).
 - `src/api/client.ts` — typed fetch wrapper against `apps/api`, using the exact request/response types from `shared-types/src/api.ts`. Don't hand-rewrite response shapes — import the types.
 - `src/state/` — session/user context (demo auth token, current draft intent while building an activity request).
 

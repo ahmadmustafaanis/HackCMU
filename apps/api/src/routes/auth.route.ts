@@ -1,17 +1,56 @@
 import { randomUUID } from "node:crypto";
 import { Router } from "express";
 import type { DemoLoginRequest, DemoLoginResponse, Student } from "shared-types";
+import { verifyGoogleIdToken } from "../auth/googleAuth.js";
+import { requireAuth } from "../auth/requireAuth.js";
+import { signSessionToken } from "../auth/session.js";
 import { getDb } from "../db/connection.js";
 
 /** "users" collection document shape. Duplicated in each route file that
- * touches this collection (auth/onboarding/profile) rather than sharing a
- * module — keeps these three route files independently editable, per the
- * repo's parallel-safety rule. */
-type UserDocument = Omit<Student, "id"> & { _id: string };
+ * touches this collection (auth/onboarding/profile) rather than shared,
+ * per the repo's established parallel-safety convention.
+ *
+ * `googleId`/`email`/`emailVerified`/`authProvider` are intentionally NOT
+ * part of the public `Student` type — never return them from a route.
+ * `toStudent()` below is an explicit allowlist for exactly this reason: a
+ * blind `{ ...rest }` spread would leak them the moment they're added here. */
+interface UserDocument {
+  _id: string;
+  name: string;
+  initials: string;
+  program: string;
+  year: string;
+  bio: string;
+  interests: string[];
+  vibes: string[];
+  preferredActivities: string[];
+  approximateLocation: string;
+  walkingMinutes: number;
+  availabilityLabel: string;
+  avatarUrl?: string;
+  googleId?: string;
+  email?: string;
+  emailVerified?: boolean;
+  authProvider?: "google" | "demo";
+  createdAt?: string;
+}
 
 function toStudent(doc: UserDocument): Student {
-  const { _id, ...rest } = doc;
-  return { id: _id, ...rest };
+  return {
+    id: doc._id,
+    name: doc.name,
+    initials: doc.initials,
+    program: doc.program,
+    year: doc.year,
+    bio: doc.bio,
+    interests: doc.interests as Student["interests"],
+    vibes: doc.vibes as Student["vibes"],
+    preferredActivities: doc.preferredActivities,
+    approximateLocation: doc.approximateLocation,
+    walkingMinutes: doc.walkingMinutes,
+    availabilityLabel: doc.availabilityLabel,
+    avatarUrl: doc.avatarUrl,
+  };
 }
 
 function initialsFor(name: string): string {
@@ -38,16 +77,17 @@ function buildDemoStudent(id: string, name: string): UserDocument {
     approximateLocation: "Cohon University Center",
     walkingMinutes: 5,
     availabilityLabel: "Flexible",
+    authProvider: "demo",
+    createdAt: new Date().toISOString(),
   };
 }
 
 export function createAuthRouter(): Router {
   const router = Router();
 
-  // POST /api/auth/demo-login — mocked auth: no real identity check. Upserts
-  // by name when one is given, otherwise always creates a fresh demo user.
-  // sessionToken is an opaque id the frontend echoes back; nothing verifies
-  // it server-side yet (see apps/api/CLAUDE.md).
+  // POST /api/auth/demo-login — mocked auth, kept for local dev/testing
+  // without a Google account configured. No real identity check; see
+  // apps/api/CLAUDE.md. Prefer POST /api/auth/google for anything real.
   router.post("/demo-login", async (req, res, next) => {
     try {
       const body = req.body as DemoLoginRequest;
@@ -63,8 +103,89 @@ export function createAuthRouter(): Router {
 
       const response: DemoLoginResponse = {
         student: toStudent(doc),
-        sessionToken: randomUUID(),
+        sessionToken: signSessionToken(doc._id),
       };
+      res.json(response);
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // POST /api/auth/google — real Sign in with Google. Body: { idToken } —
+  // the `credential` Google Identity Services hands the frontend after the
+  // user picks an account. Verified server-side against Google's public
+  // keys AND our own registered Client ID (see auth/googleAuth.ts) — the
+  // frontend is never trusted to assert who signed in.
+  router.post("/google", async (req, res, next) => {
+    try {
+      const idToken = (req.body as { idToken?: string }).idToken;
+      if (!idToken) {
+        res.status(400).json({ error: "missing idToken" });
+        return;
+      }
+
+      const profile = await verifyGoogleIdToken(idToken);
+      const users = (await getDb()).collection<UserDocument>("users");
+
+      const existing = await users.findOne({ googleId: profile.googleId });
+      let doc: UserDocument;
+
+      if (existing) {
+        // Refresh the few fields Google may have updated (name/photo) since
+        // last sign-in; never touch onboarding-owned fields (interests,
+        // vibes, etc.) here.
+        const updated = await users.findOneAndUpdate(
+          { _id: existing._id },
+          { $set: { name: profile.name, avatarUrl: profile.pictureUrl, emailVerified: profile.emailVerified } },
+          { returnDocument: "after" }
+        );
+        doc = updated ?? existing;
+      } else {
+        doc = {
+          _id: `google:${profile.googleId}`,
+          name: profile.name,
+          initials: initialsFor(profile.name),
+          program: "Undeclared",
+          year: "Sophomore",
+          bio: "",
+          interests: [],
+          vibes: [],
+          preferredActivities: [],
+          approximateLocation: "Cohon University Center",
+          walkingMinutes: 5,
+          availabilityLabel: "Flexible",
+          avatarUrl: profile.pictureUrl,
+          googleId: profile.googleId,
+          email: profile.email,
+          emailVerified: profile.emailVerified,
+          authProvider: "google",
+          createdAt: new Date().toISOString(),
+        };
+        await users.insertOne(doc);
+      }
+
+      const response: DemoLoginResponse = {
+        student: toStudent(doc),
+        sessionToken: signSessionToken(doc._id),
+      };
+      res.json(response);
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // GET /api/auth/me — validates the caller's session token for real
+  // (rather than the frontend just trusting whatever's cached in
+  // localStorage indefinitely) and returns the current profile.
+  router.get("/me", requireAuth, async (req, res, next) => {
+    try {
+      const users = (await getDb()).collection<UserDocument>("users");
+      const doc = await users.findOne({ _id: req.userId });
+      if (!doc) {
+        res.status(404).json({ error: "session user no longer exists" });
+        return;
+      }
+      const response: DemoLoginResponse["student"] = toStudent(doc);
       res.json(response);
     } catch (err) {
       next(err);

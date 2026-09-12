@@ -11,11 +11,16 @@ import type {
   RecommendationService,
   SuggestionsResponse,
 } from "shared-types";
+import { requireAuth } from "../auth/requireAuth.js";
 import { locations } from "../config/index.js";
 import { getMatchById, updateMatchStatus } from "../matches/matchesService.js";
 
+function locationById(locationId: string) {
+  return locations.find((l) => l.id === locationId);
+}
+
 function locationName(locationId: string): string {
-  return locations.find((l) => l.id === locationId)?.name ?? locationId;
+  return locationById(locationId)?.name ?? locationId;
 }
 
 function formatTimeLabel(startIso: string, endIso: string): string {
@@ -54,12 +59,16 @@ function toActivityStatus(status: EventStatus): ActivityStatus {
 const PLACEHOLDER_WALKING_MINUTES = 5;
 
 function toActivity(event: EventRecord): Activity {
+  const loc = locationById(event.locationId);
   return {
     id: event.id,
     title: event.title,
     type: event.canonicalActivity,
     description: event.description ?? `${capitalize(event.canonicalActivity)} at ${locationName(event.locationId)}`,
     approximateLocation: locationName(event.locationId),
+    locationId: event.locationId,
+    lat: loc?.lat,
+    lng: loc?.lng,
     timeLabel: formatTimeLabel(event.startTime, event.endTime),
     walkingMinutes: PLACEHOLDER_WALKING_MINUTES,
     attendees: event.participantIds,
@@ -101,11 +110,13 @@ export function createActivitiesRouter(deps: {
     }
   });
 
-  // GET /api/activities/suggestions?userId=...
-  router.get("/suggestions", async (req, res, next) => {
+  // GET /api/activities/suggestions?userId=... — requireAuth; the `userId`
+  // query param is accepted for backward compatibility but ignored in favor
+  // of the verified session, so you can't fetch personalization data keyed
+  // to someone else's id.
+  router.get("/suggestions", requireAuth, async (req, res, next) => {
     try {
-      const userId = typeof req.query.userId === "string" ? req.query.userId : "";
-      const activityIds = await deps.recommendationService.suggestActivities(userId);
+      const activityIds = await deps.recommendationService.suggestActivities(req.userId!);
       const response: SuggestionsResponse = { activityIds };
       res.json(response);
     } catch (err) {
@@ -115,11 +126,12 @@ export function createActivitiesRouter(deps: {
 
   // POST /api/activities/:eventId/invite — join this specific event through
   // the same atomic join path match() uses, then reflect the outcome onto
-  // the Match record the UI is tracking.
-  router.post("/:eventId/invite", async (req, res, next) => {
+  // the Match record the UI is tracking. requireAuth: always the verified
+  // session's userId, never the request body's.
+  router.post("/:eventId/invite", requireAuth, async (req, res, next) => {
     try {
       const body = req.body as InviteRequest;
-      const joinResult = await deps.eventRepository.joinIfValid(req.params.eventId, body.userId, new Date());
+      const joinResult = await deps.eventRepository.joinIfValid(req.params.eventId, req.userId!, new Date());
       const alreadyInGroup = !joinResult.ok && joinResult.reason === "ALREADY_JOINED";
 
       const newStatus = joinResult.ok || alreadyInGroup ? "accepted" : "invited";

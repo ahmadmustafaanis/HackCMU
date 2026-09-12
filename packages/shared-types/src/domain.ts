@@ -40,6 +40,9 @@ export interface Student {
   approximateLocation: string;
   walkingMinutes: number;
   availabilityLabel: string;
+  /** Google account profile photo, when signed in with Google. Public-safe
+   * (unlike email/googleId, which are never exposed on this type). */
+  avatarUrl?: string;
 }
 
 export type MatchStatus = "suggested" | "invited" | "accepted" | "connected";
@@ -62,6 +65,10 @@ export interface Activity {
   type: string;
   description: string;
   approximateLocation: string;
+  /** Canonical campus location id from `locations.json`, when known. */
+  locationId?: string;
+  lat?: number;
+  lng?: number;
   timeLabel: string;
   walkingMinutes: number;
   attendees: string[];

@@ -30,6 +30,8 @@ meetup with compatible students nearby.
 - TypeScript strict mode everywhere. No comments unless they explain a non-obvious *why*.
 - Backend tests: Vitest, in `apps/api/src/**/*.test.ts`.
 - Don't add UI/auth/deployment complexity beyond what's specced — auth is intentionally mocked (see `apps/api/CLAUDE.md`).
+- Every PR must append an entry to `AGENT_CHANGELOG.md` (see `AGENTS.md` and
+  `.github/PULL_REQUEST_TEMPLATE.md`) so later agents can see what landed.
 
 ## Boundaries
 

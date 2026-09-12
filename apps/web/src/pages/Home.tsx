@@ -7,6 +7,7 @@ import ActivityButtonGrid, {
   metaForCanonicalId,
   type ActivityMeta,
 } from "../components/ActivityButtonGrid";
+import CampusHeatmap from "../components/CampusHeatmap";
 import TabBar from "../components/TabBar";
 import TrendingCard from "../components/TrendingCard";
 import { useSession } from "../state/session";
@@ -226,6 +227,19 @@ export default function Home() {
               See all
             </Link>
           </div>
+
+          {trendingState !== "error" && (
+            <div className="mb-4">
+              <CampusHeatmap
+                activities={trending}
+                compact
+                onSelectLocation={(id) => {
+                  if (id) navigate(`/discover?location=${encodeURIComponent(id)}`);
+                  else navigate("/discover");
+                }}
+              />
+            </div>
+          )}
 
           {trendingState === "loading" && <p className="text-sm text-muted">Loading…</p>}
           {trendingState === "error" && (

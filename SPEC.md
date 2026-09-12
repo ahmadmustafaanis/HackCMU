@@ -118,7 +118,9 @@ Users can:
 - `/chat/:matchId` loads history and posts messages through the chat routes.
 - `/feedback/:eventId` submits a `great`, `good`, or `okay` rating.
 - `/success/:matchId` is the post-action confirmation surface.
-- `/discover` shows open/trending activities from `GET /api/activities`.
+- `/discover` shows open/trending activities from `GET /api/activities`, plus
+  an interactive campus heatmap of open-event density. `Activity` includes
+  optional `locationId` / `lat` / `lng` filled from `apps/api/src/config/locations.json`.
 - `/connections` loads accepted/connected relationships.
 - `/profile` shows the current student profile and session controls.
 
