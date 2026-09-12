@@ -23,6 +23,7 @@ const STEP_INTERVAL_MS = 550;
 interface PendingMatch {
   userId: string;
   intent: StructuredIntentInput;
+  forceCreate?: boolean;
 }
 
 function isPendingMatch(value: unknown): value is PendingMatch {
@@ -80,11 +81,12 @@ export default function Matching() {
     }
 
     api
-      .match({ userId: pending.userId, intent: pending.intent })
+      .match({ userId: pending.userId, intent: pending.intent, forceCreate: pending.forceCreate })
       .then((res) => {
         if (cancelled) return;
         try {
           sessionStorage.setItem(RESULT_KEY, JSON.stringify(res));
+          sessionStorage.setItem("scottys-circle:lastMatchIntent", JSON.stringify(pending));
           sessionStorage.removeItem(PENDING_MATCH_KEY);
         } catch {
           // Best-effort persistence only — navigation state below still

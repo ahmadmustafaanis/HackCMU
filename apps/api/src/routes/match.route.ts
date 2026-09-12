@@ -88,7 +88,8 @@ export function createMatchRouter(deps: {
           ...(resolvedTime ? { startTime: resolvedTime.startTime, endTime: resolvedTime.endTime } : {}),
         };
 
-  const result = await deps.matchingService.match(userId, resolvedIntent, body.idempotencyKey);
+  const matchKey = body.idempotencyKey ?? (body.forceCreate ? `force-create:${userId}:${Date.now()}` : undefined);
+  const result = await deps.matchingService.match(userId, resolvedIntent, matchKey, body.forceCreate === true);
 
         const requester = await deps.userProfileService.getProfile(userId).catch(() => null);
         const otherParticipantIds = result.event.participantIds.filter((id) => id !== userId);
@@ -110,7 +111,12 @@ export function createMatchRouter(deps: {
           matches.push(match);
         }
 
-        return { outcome: result.outcome, eventId: result.event.id, matches };
+        return {
+          outcome: result.outcome,
+          eventType: result.outcome === "MATCHED" ? "MATCHED_EXISTING" : "CREATED",
+          eventId: result.event.id,
+          matches,
+        };
       });
 
       res.json(response);

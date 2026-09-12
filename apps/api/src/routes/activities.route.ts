@@ -130,7 +130,7 @@ export function createActivitiesRouter(deps: {
       const eventId = req.params.eventId || body.eventId;
       const result = await deps.eventRepository.joinIfValid(eventId, req.userId!, new Date());
       if (!result.ok) {
-        const status: JoinEventResponse["status"] = result.reason === "FULL" ? "full" : result.reason === "EXPIRED" ? "expired" : result.reason === "NOT_FOUND" ? "not_found" : "expired";
+        const status: JoinEventResponse["status"] = result.reason === "ALREADY_JOINED" ? "accepted" : result.reason === "FULL" ? "full" : result.reason === "EXPIRED" ? "expired" : result.reason === "NOT_FOUND" ? "not_found" : "expired";
         res.json({ status } satisfies JoinEventResponse);
         return;
       }
