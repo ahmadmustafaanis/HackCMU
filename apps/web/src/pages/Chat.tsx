@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import type { ChatMessage } from "shared-types";
+import type { Activity, ChatMessage, Student } from "shared-types";
 import { api } from "../api/client";
 import ChatBubble from "../components/ChatBubble";
 import { useSession } from "../state/session";
@@ -20,7 +20,7 @@ const POLL_MS = 4000;
 type LoadState = "loading" | "ready" | "error";
 
 export default function Chat() {
-  const { matchId } = useParams<{ matchId: string }>();
+  const { matchId: conversationId } = useParams<{ matchId: string }>();
   const navigate = useNavigate();
   const { student } = useSession();
 
@@ -28,22 +28,65 @@ export default function Chat() {
   const [loadState, setLoadState] = useState<LoadState>("loading");
   const [inputText, setInputText] = useState("");
   const [sending, setSending] = useState(false);
+  // Set only when conversationId is an activity's own id — this is a group
+  // room (see chat.route.ts) rather than the legacy 1:1 matchId convention.
+  const [activity, setActivity] = useState<Activity | null>(null);
+  const [participants, setParticipants] = useState<Record<string, Student>>({});
   const [starterIndex, setStarterIndex] = useState(() => {
-    if (!matchId) return 0;
+    if (!conversationId) return 0;
     let seed = 0;
-    for (let i = 0; i < matchId.length; i++) seed += matchId.charCodeAt(i);
+    for (let i = 0; i < conversationId.length; i++) seed += conversationId.charCodeAt(i);
     return seed % STARTERS.length;
   });
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    if (!matchId) return;
+    if (!conversationId) return;
+    let cancelled = false;
+    api
+      .getActivity(conversationId)
+      .then((res) => {
+        if (cancelled) return;
+        setActivity(res.activity);
+      })
+      .catch(() => {
+        // Not an activity id — the legacy 1:1 matchId path, no group header.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [conversationId]);
+
+  useEffect(() => {
+    if (!activity || !student) return;
+    const missing = activity.attendees.filter((id) => id !== student.id && !(id in participants));
+    if (missing.length === 0) return;
+    let cancelled = false;
+    Promise.allSettled(missing.map((id) => api.getProfile(id).then((profile) => [id, profile] as const))).then(
+      (entries) => {
+        if (cancelled) return;
+        setParticipants((prev) => {
+          const next = { ...prev };
+          for (const entry of entries) {
+            if (entry.status === "fulfilled") next[entry.value[0]] = entry.value[1];
+          }
+          return next;
+        });
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [activity, student, participants]);
+
+  useEffect(() => {
+    if (!conversationId) return;
     let cancelled = false;
 
     async function load(showLoading: boolean) {
       if (showLoading) setLoadState("loading");
       try {
-        const res = await api.getChatHistory(matchId as string);
+        const res = await api.getChatHistory(conversationId as string);
         if (!cancelled) {
           setMessages(res.messages);
           setLoadState("ready");
@@ -60,7 +103,7 @@ export default function Chat() {
       cancelled = true;
       clearInterval(timer);
     };
-  }, [matchId]);
+  }, [conversationId]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -68,12 +111,12 @@ export default function Chat() {
 
   async function handleSend() {
     const text = inputText.trim();
-    if (!text || !matchId || !student || sending) return;
+    if (!text || !conversationId || !student || sending) return;
 
     const optimisticId = `local-${Date.now()}`;
     const optimisticMessage: ChatMessage = {
       id: optimisticId,
-      conversationId: matchId,
+      conversationId,
       senderId: student.id,
       text,
       timestampLabel: "Sending…",
@@ -83,7 +126,7 @@ export default function Chat() {
     setSending(true);
 
     try {
-      const sent = await api.sendMessage(matchId, { senderId: student.id, text });
+      const sent = await api.sendMessage(conversationId, { senderId: student.id, text });
       setMessages((prev) => prev.map((m) => (m.id === optimisticId ? sent : m)));
     } catch {
       setMessages((prev) =>
@@ -105,7 +148,10 @@ export default function Chat() {
         <button type="button" onClick={() => navigate(-1)} className="text-sm text-muted">
           ← Back
         </button>
-        <h1 className="text-sm font-semibold text-ink">Conversation</h1>
+        <div className="min-w-0">
+          <h1 className="truncate text-sm font-semibold text-ink">{activity ? activity.title : "Conversation"}</h1>
+          {activity && <p className="text-xs text-muted">{activity.attendeeCount} people in this room</p>}
+        </div>
       </div>
 
       <div className="flex flex-1 flex-col gap-3 overflow-y-auto p-4">
@@ -124,7 +170,12 @@ export default function Chat() {
         )}
 
         {messages.map((message) => (
-          <ChatBubble key={message.id} message={message} isOwn={message.senderId === student?.id} />
+          <ChatBubble
+            key={message.id}
+            message={message}
+            isOwn={message.senderId === student?.id}
+            senderName={activity ? participants[message.senderId]?.name : undefined}
+          />
         ))}
         <div ref={bottomRef} />
       </div>

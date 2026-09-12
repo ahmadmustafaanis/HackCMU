@@ -5,6 +5,47 @@ landed without reconstructing it from the diff.
 
 Newest entries go at the top. Keep each entry short: intent, files, follow-ups.
 
+## 2026-09-12 — Messages tab, activity group chat rooms, join-status fix, and email notification hooks
+
+- Added a Messages tab (bottom nav) listing both 1:1 match conversations and
+  activity group chat rooms — a thread only appears once someone's actually
+  sent a message in it (an accepted match or joined activity with no
+  messages yet stays off the list until someone says hi).
+- Added a group chat room per activity, reusing the existing chat
+  infrastructure with `conversationId === eventId` rather than a new
+  system. Access is now enforced server-side via `event.participantIds`
+  (chat previously had no membership check at all — any authenticated user
+  could read/post to any conversationId). A "💬 Group chat" button appears
+  on the activity page once you're a participant; `Chat.tsx` shows the
+  activity title/participant count and each message's sender name for
+  group rooms, and is otherwise unchanged for the legacy 1:1 view.
+- Fixed `Activity.status` ("open"/"joined"/"completed") — it used to
+  reflect only whether the event was globally at capacity, not whether the
+  viewer had actually joined, so "My Activities" showed "joined" by
+  coincidence (whenever the event happened to fill up) rather than
+  reflecting your own participation. Now viewer-aware.
+- Added a "👑 Hosting" tag on activity cards so "My Activities" visually
+  distinguishes activities you host from ones you merely joined.
+- Added (console-logged, not yet wired to a real provider) email
+  notifications: when your own match request actually pairs you into an
+  event, and when someone joins an event you host — the latter path
+  previously only fired for the manual "Join activity" button, never for
+  the auto-join-through-matching path, which is the more common way people
+  actually join activities.
+- Files: `apps/web/src/pages/Messages.tsx` (new), `apps/web/src/pages/Chat.tsx`,
+  `apps/web/src/components/ChatBubble.tsx`, `apps/web/src/pages/Meetup.tsx`,
+  `apps/web/src/components/{TabBar,ActivityFeedCard}.tsx`,
+  `apps/web/src/pages/Discover.tsx`, `apps/web/src/App.tsx`,
+  `apps/api/src/routes/{chat,activities,match}.route.ts`,
+  `apps/api/src/notifications/notificationService.ts`, `apps/api/src/server.ts`.
+- Follow-up: email delivery is console-log-only for now (no provider
+  configured — see `sendEmailNotification` in `notificationService.ts`);
+  swap in Resend/SES/SMTP when ready, the (userId, subject, body) call
+  sites won't need to change. Also worth revisiting: matching currently
+  gives every activity type (including "coffee") a shared capacity of 4 —
+  if a genuinely 1:1-only match type is wanted, that's a
+  `matchingService.ts`/seed-template change, not yet done.
+
 ## 2026-09-12 — Auth0 sign-in, route guards, and returning-user/logout fixes
 
 - Added Auth0 as a third real sign-in option alongside Google/Guest, using

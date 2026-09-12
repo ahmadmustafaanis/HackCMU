@@ -16,9 +16,13 @@ interface ActivityFeedCardProps {
   activity: Activity;
   onClick?: () => void;
   highlighted?: boolean;
+  /** True when the current viewer is this activity's host — shows a
+   * "Hosting" tag so "my activities" doesn't read as one undifferentiated
+   * list of things you merely joined. */
+  isHost?: boolean;
 }
 
-export default function ActivityFeedCard({ activity, onClick, highlighted = false }: ActivityFeedCardProps) {
+export default function ActivityFeedCard({ activity, onClick, highlighted = false, isHost = false }: ActivityFeedCardProps) {
   return (
     <button
       type="button"
@@ -29,7 +33,14 @@ export default function ActivityFeedCard({ activity, onClick, highlighted = fals
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-ink">{activity.title}</p>
+          <div className="flex items-center gap-1.5">
+            <p className="truncate text-sm font-semibold text-ink">{activity.title}</p>
+            {isHost && (
+              <span className="shrink-0 rounded-full border border-primary/30 bg-primary/5 px-2 py-0.5 text-[10px] font-medium text-primary">
+                👑 Hosting
+              </span>
+            )}
+          </div>
           <p className="text-xs text-muted">{activity.type}</p>
         </div>
         <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium ${STATUS_STYLES[activity.status]}`}>

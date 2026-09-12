@@ -255,7 +255,7 @@ async function bootstrap(): Promise<void> {
   app.use("/api/match", createMatchRouter({ matchingService, userProfileService, idempotencyRunner }));
   app.use("/api/activities", createActivitiesRouter({ eventRepository, recommendationService }));
   app.use("/api/matches", createMatchesRouter());
-  app.use("/api/chat", createChatRouter());
+  app.use("/api/chat", createChatRouter({ eventRepository }));
   app.use("/api/feedback", createFeedbackRouter());
   app.use("/api/connections", createConnectionsRouter());
   app.use("/api/debug", createDebugRouter());

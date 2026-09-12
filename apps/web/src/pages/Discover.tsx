@@ -5,6 +5,7 @@ import { api } from "../api/client";
 import ActivityFeedCard from "../components/ActivityFeedCard";
 import CampusHeatmap from "../components/CampusHeatmap";
 import TabBar from "../components/TabBar";
+import { useSession } from "../state/session";
 
 type WhenFilter = "all" | "now" | "hour" | "later" | "week";
 type CategoryFilter = "all" | "food" | "study" | "fitness" | "coffee" | "social";
@@ -52,6 +53,7 @@ function matchesCategory(activity: Activity, category: CategoryFilter): boolean 
 export default function Discover() {
   const navigate = useNavigate();
   const routeLocation = useLocation();
+  const { student } = useSession();
   const myActivities = routeLocation.pathname === "/activities";
   const [searchParams, setSearchParams] = useSearchParams();
   const [activities, setActivities] = useState<Activity[] | null>(null);
@@ -243,6 +245,7 @@ export default function Discover() {
                 activity={activity}
                 onClick={() => navigate(`/meetup/${activity.id}`)}
                 highlighted={location !== "all" && (activity.locationId ?? activity.approximateLocation) === location}
+                isHost={activity.hostId === student?.id}
               />
             ))}
         </div>

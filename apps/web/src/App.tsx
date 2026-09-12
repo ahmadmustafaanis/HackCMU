@@ -11,6 +11,7 @@ import Login from "./pages/Login";
 import Matching from "./pages/Matching";
 import MatchResults from "./pages/MatchResults";
 import Meetup from "./pages/Meetup";
+import Messages from "./pages/Messages";
 import OnboardingWizard from "./pages/onboarding/OnboardingWizard";
 import PersonProfile from "./pages/PersonProfile";
 import Profile from "./pages/Profile";
@@ -38,6 +39,7 @@ export default function App() {
           <Route path="/discover" element={<Navigate to="/activities" replace />} />
           <Route path="/activities" element={<Discover />} />
           <Route path="/connections" element={<Connections />} />
+          <Route path="/messages" element={<Messages />} />
           <Route path="/debug/database" element={<DebugDatabase />} />
           <Route path="/profile" element={<Profile />} />
         </Route>
