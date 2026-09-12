@@ -204,6 +204,51 @@ describe("DefaultMatchingService", () => {
     expect(repository.createCallCount).toBe(0);
   });
 
+  it("creates explicitly even when a compatible event exists, and deduplicates retries", async () => {
+    const repository = new FakeEventRepository([makeEvent({ id: "existing" })]);
+    const service = buildService(repository, { idempotencyRunner: new RecordingIdempotencyRunner() });
+    const intent = makeIntent();
+    const matched = await service.match("user-1", intent, "request", "match");
+    const created = await service.match("user-1", intent, "request", "create");
+    const retried = await service.match("user-1", intent, "request", "create");
+    expect(matched.event.id).toBe("existing");
+    expect(created.outcome).toBe("PENDING");
+    expect(created.event.id).not.toBe("existing");
+    expect(created.event.participantIds).toEqual(["user-1"]);
+    expect(created.event.status).toBe("OPEN");
+    expect(retried).toEqual(created);
+    expect(repository.createCallCount).toBe(1);
+  });
+
+  it("preserves keyword semantics, time and location when explicitly creating", async () => {
+    const repository = new FakeEventRepository([]);
+    const service = buildService(repository, { semanticParser: new FakeSemanticParser({ canonicalActivity: "coding", category: "coding", tags: ["robotics"], confidence: 0.9 }) });
+    const startTime = new Date(Date.now() + 30 * 60_000).toISOString();
+    const result = await service.match("user-1", makeIntent({ activityIds: [], categoryIds: [], sourceText: "robotics", startTime }), undefined, "create");
+    expect(result.event.canonicalActivity).toBe("coding");
+    expect(result.event.sourceText).toBe("robotics");
+    expect(result.event.startTime).toBe(startTime);
+    expect(result.event.locationId).toBe("cohon-university-center");
+    expect(repository.lastRetrievedIntent).toBeUndefined();
+  });
+
+  it("saves host details and keeps scheduled activities open until their start", async () => {
+    const repository = new FakeEventRepository([]);
+    const service = buildService(repository);
+    const startTime = new Date(Date.now() + 24 * 60 * 60_000).toISOString();
+    const result = await service.match("user-1", makeIntent({
+      title: "Coffee before class", description: "Meet by the entrance",
+      capacity: 8, durationMinutes: 45, startTime,
+    }), undefined, "create");
+    expect(result.event.title).toBe("Coffee before class");
+    expect(result.event.description).toBe("Meet by the entrance");
+    expect(result.event.capacity).toBe(8);
+    expect(result.event.participantCount).toBe(1);
+    expect(result.event.durationMinutes).toBe(45);
+    expect(Date.parse(result.event.endTime) - Date.parse(startTime)).toBe(45 * 60_000);
+    expect(Date.parse(result.event.expiresAt)).toBeGreaterThanOrEqual(Date.parse(startTime));
+  });
+
   it("creates a new event with the creator auto-participating when nothing compatible exists", async () => {
     const repository = new FakeEventRepository([]); // no candidates at all
     const service = buildService(repository);

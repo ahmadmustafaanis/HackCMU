@@ -82,7 +82,7 @@ export default function ActivitySetup() {
     );
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = (mode: "match" | "create" = "match") => {
     const preset = PRESETS.find((p) => p.id === presetId);
     const text = [preset?.text, freeText.trim()].filter(Boolean).join("; ") || undefined;
     const time = buildTimeString(timeOption, laterValue);
@@ -93,7 +93,7 @@ export default function ActivitySetup() {
       time,
       locationIds: locationId === "anywhere" ? [] : [locationId],
     };
-    const payload = { userId: student.id, intent };
+    const payload = { userId: student.id, intent, mode };
 
     try {
       sessionStorage.setItem(PENDING_MATCH_KEY, JSON.stringify(payload));
@@ -101,7 +101,7 @@ export default function ActivitySetup() {
       // sessionStorage can throw in locked-down environments — navigation
       // state below still carries the payload either way.
     }
-    navigate("/matching", { state: payload });
+    navigate(mode === "create" ? "/activity/new" : "/matching", { state: payload });
   };
 
   return (
@@ -242,11 +242,14 @@ export default function ActivitySetup() {
 
           <button
             type="button"
-            onClick={handleSubmit}
+            onClick={() => handleSubmit()}
             disabled={timeOption === "later" && !laterValue}
             className="mt-auto w-full rounded-full bg-primary px-4 py-3 text-sm font-semibold text-white shadow-sm disabled:opacity-50"
           >
             Find my match
+          </button>
+          <button type="button" onClick={() => handleSubmit("create")} disabled={timeOption === "later" && !laterValue} className="w-full rounded-full border border-primary px-4 py-3 text-sm font-semibold text-primary disabled:opacity-50">
+            Start a new activity
           </button>
         </div>
       )}

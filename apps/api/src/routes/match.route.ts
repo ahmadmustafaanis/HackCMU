@@ -1,3 +1,4 @@
+import { locations } from "../config/index.js";
 import { Router } from "express";
 import type { MatchRequest, MatchResponse, Match, MatchingService, ScoreBreakdown, UserProfileService } from "shared-types";
 import { requireAuth } from "../auth/requireAuth.js";
@@ -44,6 +45,9 @@ function hashString(input: string): string {
 function deriveRouteIdempotencyKey(userId: string, body: MatchRequest, now: Date): string {
   const bucket = Math.floor(now.getTime() / 60_000);
   const raw = JSON.stringify({
+    mode: body.mode ?? "match",
+    title: body.intent.title, description: body.intent.description,
+    capacity: body.intent.capacity, durationMinutes: body.intent.durationMinutes,
     activityIds: [...body.intent.activityIds].sort(),
     locationIds: [...body.intent.locationIds].sort(),
     text: body.intent.text ?? null,
@@ -65,9 +69,26 @@ export function createMatchRouter(deps: {
     try {
       const userId = req.userId!;
       const body = req.body as MatchRequest;
+      if (body.mode !== undefined && body.mode !== "match" && body.mode !== "create") {
+        res.status(400).json({ error: "Invalid activity mode" });
+        return;
+      }
+      const details = body.intent;
+      if (!details ||
+          (details.capacity !== undefined && (!Number.isInteger(details.capacity) || details.capacity < 2 || details.capacity > 100)) ||
+          (details.durationMinutes !== undefined && (!Number.isInteger(details.durationMinutes) || details.durationMinutes < 15 || details.durationMinutes > 480)) ||
+          (details.title !== undefined && (typeof details.title !== "string" || !details.title.trim() || details.title.length > 100)) ||
+          (details.description !== undefined && (typeof details.description !== "string" || details.description.length > 1000))) {
+        res.status(400).json({ error: "Use 2–100 participants, 15–480 minutes, and a title up to 100 characters." });
+        return;
+      }
+      if (body.mode === "create" && (!Array.isArray(details.locationIds) || details.locationIds.length !== 1 || !locations.some(location => location.id === details.locationIds[0]))) {
+        res.status(400).json({ error: "Choose a campus location for your activity." });
+        return;
+      }
       const now = new Date();
       const routeKey = body.idempotencyKey
-        ? `match-route:client:${body.idempotencyKey}`
+        ? `match-route:client:${userId}:${body.mode ?? "match"}:${body.idempotencyKey}`
         : deriveRouteIdempotencyKey(userId, body, now);
 
       const response = await deps.idempotencyRunner.runOnce(routeKey, 60_000, async (): Promise<MatchResponse> => {
@@ -82,13 +103,20 @@ export function createMatchRouter(deps: {
         const resolvedTime = resolveExplicitOrRelativeTime(body.intent.time, now) ?? (extracted.startTime
           ? { startTime: extracted.startTime, endTime: undefined }
           : null);
+        if (body.mode === "create" && (!resolvedTime || new Date(resolvedTime.startTime).getTime() < now.getTime() - 60_000)) {
+          throw Object.assign(new Error("Choose a valid start time in the future."), { status: 400 });
+        }
         const resolvedIntent = {
           ...intent,
-          locationIds: Array.from(new Set([...intent.locationIds, ...extracted.locationIds])),
+          title: details.title?.trim(),
+          description: details.description?.trim(),
+          capacity: details.capacity,
+          durationMinutes: details.durationMinutes,
+          locationIds: intent.locationIds.length ? intent.locationIds : extracted.locationIds,
           ...(resolvedTime ? { startTime: resolvedTime.startTime, endTime: resolvedTime.endTime } : {}),
         };
 
-  const result = await deps.matchingService.match(userId, resolvedIntent, body.idempotencyKey);
+  const result = await deps.matchingService.match(userId, resolvedIntent, body.idempotencyKey, body.mode);
 
         const requester = await deps.userProfileService.getProfile(userId).catch(() => null);
         const otherParticipantIds = result.event.participantIds.filter((id) => id !== userId);
@@ -115,6 +143,10 @@ export function createMatchRouter(deps: {
 
       res.json(response);
     } catch (err) {
+      if (err instanceof Error && "status" in err && err.status === 400) {
+        res.status(400).json({ error: err.message });
+        return;
+      }
       next(err);
     }
   });

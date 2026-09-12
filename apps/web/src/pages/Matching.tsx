@@ -21,6 +21,7 @@ const STEPS = [
 const STEP_INTERVAL_MS = 550;
 
 interface PendingMatch {
+  mode?: "match" | "create";
   userId: string;
   intent: StructuredIntentInput;
 }
@@ -50,6 +51,9 @@ export default function Matching() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const [creating] = useState(() => readPendingMatch(location.state)?.mode === "create");
+  const steps = creating ? ["Preparing your activity", "Opening it for others to join"] : STEPS;
+
   const [visibleCount, setVisibleCount] = useState(1);
   const [apiDone, setApiDone] = useState(false);
   const [result, setResult] = useState<MatchResponse | null>(null);
@@ -58,7 +62,7 @@ export default function Matching() {
   // Staged checklist reveal — purely client-side, independent of the real
   // network call so the animation always plays out at a consistent pace.
   useEffect(() => {
-    const timers = STEPS.slice(1).map((_step, idx) =>
+    const timers = steps.slice(1).map((_step, idx) =>
       window.setTimeout(() => setVisibleCount(idx + 2), (idx + 1) * STEP_INTERVAL_MS)
     );
     return () => timers.forEach((timer) => window.clearTimeout(timer));
@@ -80,7 +84,7 @@ export default function Matching() {
     }
 
     api
-      .match({ userId: pending.userId, intent: pending.intent })
+      .match({ userId: pending.userId, intent: pending.intent, mode: pending.mode })
       .then((res) => {
         if (cancelled) return;
         try {
@@ -108,12 +112,12 @@ export default function Matching() {
   }, []);
 
   useEffect(() => {
-    if (!apiDone || !result || visibleCount < STEPS.length) return;
+    if (!apiDone || !result || visibleCount < steps.length) return;
     const timer = window.setTimeout(() => {
       navigate("/matches", { state: { result } });
     }, 450);
     return () => window.clearTimeout(timer);
-  }, [apiDone, result, visibleCount, navigate]);
+  }, [apiDone, result, visibleCount, navigate, steps.length]);
 
   const success = apiDone && !error;
 
@@ -123,14 +127,14 @@ export default function Matching() {
         🐾
       </div>
       <div>
-        <h1 className="text-xl font-semibold text-ink">Finding your match…</h1>
-        <p className="mt-1 text-sm text-muted">Hang tight while we look around campus.</p>
+        <h1 className="text-xl font-semibold text-ink">{creating ? "Starting your activity…" : "Finding your match…"}</h1>
+        <p className="mt-1 text-sm text-muted">{creating ? "Your plan will be open for others to join." : "Hang tight while we look around campus."}</p>
       </div>
 
       <ul className="flex w-full flex-col gap-3 text-left">
-        {STEPS.map((step, index) => {
+        {steps.map((step, index) => {
           const isVisible = index < visibleCount;
-          const isLastStep = index === STEPS.length - 1;
+          const isLastStep = index === steps.length - 1;
           const isChecked = isVisible && (!isLastStep || success);
           const isSpinning = isVisible && isLastStep && !apiDone;
 

@@ -131,7 +131,7 @@ export default function Home() {
     }).catch(() => undefined);
   }, [student]);
 
-  function startMatching() {
+  function startMatching(mode: "match" | "create" = "match") {
     const intent: StructuredIntentInput = {
       activityIds: selectedActivity ? [selectedActivity.canonicalId] : [],
       text: freeText.trim() || undefined,
@@ -139,7 +139,7 @@ export default function Home() {
       locationIds: locationId ? [locationId] : [],
     };
     if (intent.activityIds.length === 0 && !intent.text) return;
-    navigate("/matching", { state: { userId: student?.id, intent } });
+    navigate(mode === "create" ? "/activity/new" : "/matching", { state: { userId: student?.id, intent, mode } });
   }
 
   const firstName = student?.name.split(" ")[0] ?? "there";
@@ -207,11 +207,20 @@ export default function Home() {
           {intentOpen && (selectedActivity || freeText.trim()) && (
             <button
               type="button"
-              onClick={startMatching}
+              onClick={() => startMatching()}
               className="mt-4 w-full rounded-full bg-primary px-4 py-3 text-sm font-semibold text-white"
             >
               Find people
             </button>
+          )}
+          {intentOpen && (selectedActivity || freeText.trim()) && (
+            <div className="mt-3 rounded-2xl border border-line bg-card p-4">
+              <h3 className="text-sm font-semibold text-ink">Want to start your own?</h3>
+              <p className="mt-1 text-xs text-muted">Create an activity for your plan and let others join, even if something similar is already happening.</p>
+              <button type="button" onClick={() => startMatching("create")} className="mt-3 w-full rounded-full border border-primary px-4 py-3 text-sm font-semibold text-primary">
+                Start a new activity
+              </button>
+            </div>
           )}
           {intentOpen && selectedActivity && (
             <section className="mt-5">

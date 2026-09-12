@@ -99,5 +99,5 @@ export interface MatchingService {
   /** Core authoritative path: semantic parse (if needed) → resolve time/
    * location → candidate retrieval → hard filter → rank → transactional
    * join-or-create. Idempotent per (userId, idempotencyKey). */
-  match(userId: string, intent: NormalizedIntent, idempotencyKey?: string): Promise<import("./matching.js").MatchResult>;
+  match(userId: string, intent: NormalizedIntent, idempotencyKey?: string, mode?: "match" | "create"): Promise<import("./matching.js").MatchResult>;
 }

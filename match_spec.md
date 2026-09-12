@@ -346,6 +346,24 @@ Same user attempts to join the same event twice
 
 ### 11. Creating a New Event
 
+Before explicit creation, a details form collects an activity name, one campus
+location, Now or a future local date/time, duration (15–480 minutes), participant
+limit (2–100, including the creator), and optional notes. These values are
+persisted on the event. Scheduled events do not expire before their start.
+
+
+The interface always offers **Start a new activity** alongside matching when
+an activity or keyword is entered, including when recommendations are empty
+or the user prefers not to join an existing activity. This preserves the
+entered text, selected activity, time, and location. Explicit creation uses
+`mode: "create"` on the match request, normalizes the intent, and skips
+candidate retrieval and joining. Repeated submissions remain idempotent;
+creation and matching use separate idempotency scopes.
+
+When matching finds no suitable event, automatic creation still applies.
+Both paths show **Your activity is open**, explain that the creator is the
+first participant, and link to the activity details and My Activities.
+
 If no sufficiently compatible existing event is available, the system creates a new event.
 
 The creator automatically becomes its first participant.

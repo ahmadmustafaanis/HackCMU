@@ -29,9 +29,9 @@ export default function Meetup() {
       setLoading(true);
       setLoadError(null);
       try {
-        const { activities } = await api.getActivities();
+        const found = await api.getActivity(id);
         if (cancelled) return;
-        const found = activities.find((a) => a.id === id) ?? null;
+
         setActivity(found);
 
         const otherId =
@@ -60,8 +60,12 @@ export default function Meetup() {
     };
   }, [eventId, student?.id]);
 
+  const isHost = !!student && activity?.hostId === student.id;
+  const isParticipant = isHost || (!!student && !!activity?.attendees.includes(student.id));
+  const canJoin = !!activity && !isParticipant && activity.status === "open" && activity.attendeeCount < activity.capacity;
+
   const joinActivity = async () => {
-    if (!eventId) return;
+    if (!eventId || !canJoin) return;
     setJoining(true);
     setJoinMessage(null);
     try {
@@ -93,7 +97,7 @@ export default function Meetup() {
         )}
 
         {activity && (
-          <p className="text-sm font-medium text-primary">{activity.title}</p>
+          <p className="text-sm font-medium text-primary">{isHost ? "You’re hosting this activity" : isParticipant ? "You’ve joined this activity" : activity.title}</p>
         )}
 
         <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm text-muted">
@@ -105,14 +109,19 @@ export default function Meetup() {
         {joinMessage && <p className="text-xs text-primary">{joinMessage}</p>}
       </div>
       <div className="mt-auto flex flex-col gap-3 pb-2">
-        <button
+        {isParticipant ? (
+          <>
+            <p className="text-center text-sm text-muted">{isHost ? "You’re already included as the first participant." : "You’re already a participant."}</p>
+            <button type="button" onClick={() => navigate("/activities")} className="w-full rounded-2xl bg-primary py-3 text-sm font-semibold text-white">My Activities</button>
+          </>
+        ) : <button
           type="button"
           onClick={joinActivity}
-          disabled={joining || loading || !activity}
+          disabled={joining || loading || !canJoin}
           className="w-full rounded-2xl bg-primary py-3 text-sm font-semibold text-white shadow-sm disabled:opacity-50"
         >
-          {joining ? "Joining…" : "Join activity"}
-        </button>
+          {joining ? "Joining…" : activity && !canJoin ? "Activity unavailable" : "Join activity"}
+        </button>}
         <button type="button" onClick={() => navigate(-1)} className="text-center text-sm font-medium text-muted underline-offset-2 hover:text-primary hover:underline">Back</button>
       </div>
     </div>

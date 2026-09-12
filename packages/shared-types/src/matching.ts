@@ -7,6 +7,10 @@ import type { Vibe } from "./domain.js";
 /** The single normalized shape every matching operation reasons about,
  * regardless of whether it came from button taps or free text. */
 export interface NormalizedIntent {
+  title?: string;
+  description?: string;
+  capacity?: number;
+  durationMinutes?: number;
   activityIds: string[];
   categoryIds: string[];
   tags: string[];

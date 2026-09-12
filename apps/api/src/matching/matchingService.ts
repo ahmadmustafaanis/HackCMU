@@ -63,6 +63,7 @@ function deriveFallbackIdempotencyKey(userId: string, intent: NormalizedIntent, 
     locationIds: [...intent.locationIds].sort(),
     startTime: intent.startTime ?? null,
     sourceText: intent.sourceText ?? null,
+    title: intent.title, description: intent.description, capacity: intent.capacity, durationMinutes: intent.durationMinutes,
   });
   return `match:${userId}:${bucket}:${hashString(raw)}`;
 }
@@ -90,19 +91,19 @@ export class DefaultMatchingService implements MatchingService {
     }
   ) {}
 
-  async match(userId: string, intent: NormalizedIntent, idempotencyKey?: string): Promise<MatchResult> {
+  async match(userId: string, intent: NormalizedIntent, idempotencyKey?: string, mode: "match" | "create" = "match"): Promise<MatchResult> {
     const now = new Date();
-    const key = idempotencyKey ?? deriveFallbackIdempotencyKey(userId, intent, now);
+    const key = `${userId}:${mode}:${idempotencyKey ?? deriveFallbackIdempotencyKey(userId, intent, now)}`;
 
-    return this.idempotencyRunner.runOnce(key, this.config.idempotencyTtlMs, () => this.runMatch(userId, intent, now));
+    return this.idempotencyRunner.runOnce(key, this.config.idempotencyTtlMs, () => this.runMatch(userId, intent, now, mode));
   }
 
-  private async runMatch(userId: string, intent: NormalizedIntent, now: Date): Promise<MatchResult> {
+  private async runMatch(userId: string, intent: NormalizedIntent, now: Date, mode: "match" | "create"): Promise<MatchResult> {
     const mergedIntent = await this.mergeSemanticParse(intent);
     const time = await this.resolveTime(userId, mergedIntent, now);
     const resolvedIntent: NormalizedIntent = { ...mergedIntent, startTime: time.startTime, endTime: time.endTime };
 
-    const candidates = await this.eventRepository.retrieveCandidates(resolvedIntent, now, thresholds.maxCandidates);
+    const candidates = mode === "create" ? [] : await this.eventRepository.retrieveCandidates(resolvedIntent, now, thresholds.maxCandidates);
     this.metrics.recordCandidateCount(candidates.length);
 
     const scored = candidates
@@ -149,7 +150,7 @@ export class DefaultMatchingService implements MatchingService {
 
   private async resolveTime(userId: string, intent: NormalizedIntent, now: Date): Promise<{ startTime: string; endTime: string }> {
     const canonicalActivity = intent.activityIds[0] ?? "";
-    const durationMinutes = this.config.getDurationMinutes(canonicalActivity);
+    const durationMinutes = intent.durationMinutes ?? this.config.getDurationMinutes(canonicalActivity);
 
     if (intent.startTime) {
       const endTime = intent.endTime ?? new Date(new Date(intent.startTime).getTime() + durationMinutes * 60_000).toISOString();
@@ -178,19 +179,20 @@ export class DefaultMatchingService implements MatchingService {
     const category = intent.categoryIds[0] ?? "general";
     const vibe = await this.resolveVibe(userId);
     const createdAt = now.toISOString();
-    const expiresAt = new Date(now.getTime() + CREATED_EVENT_WINDOW_MS).toISOString();
+    const expiresAt = new Date(Math.max(now.getTime() + CREATED_EVENT_WINDOW_MS, new Date(time.startTime).getTime())).toISOString();
 
     return this.eventRepository.create({
-      title: capitalize(canonicalActivity),
+      title: intent.title ?? capitalize(canonicalActivity),
+      description: intent.description,
       canonicalActivity,
       category,
       tags: intent.tags,
       sourceText: intent.sourceText,
       startTime: time.startTime,
       endTime: time.endTime,
-      durationMinutes: this.config.getDurationMinutes(canonicalActivity),
+      durationMinutes: (new Date(time.endTime).getTime() - new Date(time.startTime).getTime()) / 60_000,
       locationId: intent.locationIds[0] ?? "unknown",
-      capacity: DEFAULT_EVENT_CAPACITY,
+      capacity: intent.capacity ?? DEFAULT_EVENT_CAPACITY,
       participantIds: [userId],
       participantCount: 1,
       isFull: false,

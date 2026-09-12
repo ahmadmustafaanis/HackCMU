@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import RequireAuth from "./components/RequireAuth";
+import CreateActivity from "./pages/CreateActivity";
 import ActivitySetup from "./pages/ActivitySetup";
 import Chat from "./pages/Chat";
 import Connections from "./pages/Connections";
@@ -28,6 +29,7 @@ export default function App() {
           <Route path="/onboarding/*" element={<OnboardingWizard />} />
           <Route path="/home" element={<Home />} />
           <Route path="/activity/:type/setup" element={<ActivitySetup />} />
+          <Route path="/activity/new" element={<CreateActivity />} />
           <Route path="/matching" element={<Matching />} />
           <Route path="/matches" element={<MatchResults />} />
           <Route path="/people/:id" element={<PersonProfile />} />

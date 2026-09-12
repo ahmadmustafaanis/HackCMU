@@ -1,3 +1,4 @@
+import type { Activity } from "shared-types";
 import type {
   ActivitiesResponse,
   ChatHistoryResponse,
@@ -68,6 +69,7 @@ export const api = {
   getSuggestions: (userId: string) => request<SuggestionsResponse>(`/activities/suggestions?userId=${encodeURIComponent(userId)}`),
   recommend: (body: RecommendRequest) => post<RecommendRequest, RecommendResponse>("/recommend", body),
   match: (body: MatchRequest) => post<MatchRequest, MatchResponse>("/match", body),
+  getActivity: (eventId: string) => request<Activity>(`/activities/${encodeURIComponent(eventId)}`),
   getActivities: () => request<ActivitiesResponse>("/activities"),
   getMyActivities: () => request<ActivitiesResponse>("/activities/mine"),
   joinEvent: (eventId: string) => post<{ eventId: string }, JoinEventResponse>(`/activities/${eventId}/join`, { eventId }),

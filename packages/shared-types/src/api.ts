@@ -5,6 +5,10 @@
 import type { Activity, ChatMessage, Interest, Match, Student, Vibe } from "./domain.js";
 
 export interface StructuredIntentInput {
+  title?: string;
+  description?: string;
+  capacity?: number;
+  durationMinutes?: number;
   activityIds: string[];
   /** Free text, e.g. "treadmill" or "work on my robotics project". */
   text?: string;
@@ -63,6 +67,7 @@ export interface RecommendResponse {
 
 // POST /api/match  (core authoritative path)
 export interface MatchRequest {
+  mode?: "match" | "create";
   userId: string;
   intent: StructuredIntentInput;
   idempotencyKey?: string;

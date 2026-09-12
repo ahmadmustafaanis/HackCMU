@@ -149,9 +149,9 @@ export default function MatchResults() {
         ← Back
       </button>
 
-      <h1 className="text-xl font-semibold text-ink">We found some people for you</h1>
+      <h1 className="text-xl font-semibold text-ink">{loadState === "ready" && matches?.length === 0 ? (eventId ? "Your activity is open" : "No matches yet") : "We found some people for you"}</h1>
       <p className="mt-1 text-sm text-muted">
-        Ranked by shared interests, vibe, and availability.
+        {loadState === "ready" && matches?.length === 0 ? "Start something together when others join." : "Ranked by shared interests, vibe, and availability."}
       </p>
 
       <div className="mt-5 flex flex-1 flex-col gap-3">
@@ -167,10 +167,13 @@ export default function MatchResults() {
 
         {loadState === "ready" && matches && matches.length === 0 && (
           <div className="mt-8 rounded-2xl border border-line bg-card p-5 text-center">
-            <p className="text-sm font-medium text-ink">No matches yet</p>
+            <p className="text-sm font-medium text-ink">{eventId ? "You’re the first participant" : "No matches yet"}</p>
             <p className="mt-1 text-sm text-muted">
-              Try a different activity or check back in a bit — new people join all the time.
+              {eventId ? "Your activity is ready for others to discover and join. You can find it in My Activities." : "Start a new activity and let others join your plan."}
             </p>
+            <button type="button" onClick={() => navigate(eventId ? `/meetup/${eventId}` : "/home")} className="mt-4 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-white">
+              {eventId ? "View my activity" : "Start a new activity"}
+            </button>
           </div>
         )}
 

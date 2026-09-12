@@ -5,6 +5,39 @@ landed without reconstructing it from the diff.
 
 Newest entries go at the top. Keep each entry short: intent, files, follow-ups.
 
+## 2026-09-12 — Host-aware details and location search
+
+- Meetup hides Join for hosts and existing participants, shows participation
+  status and My Activities, and disables joining full or closed activities.
+- Details now fetch a single activity by ID, so hosted/full events remain
+  accessible outside the limited open-activity feed.
+- Creation has a typed campus-location search with selectable results and
+  selected-location feedback. Room/meeting-point instructions go in Details.
+- Files: Meetup.tsx, CreateActivity.tsx, api/client.ts, activities.route.ts.
+- Validation: production build passed; no browser interaction test run.
+
+## 2026-09-12 — Activity creation details
+
+- Start a new activity now opens a dedicated form for title, campus location,
+  Now or scheduled start, duration, participant limit (including the host),
+  and optional notes. Home and Activity Setup preserve their draft intent.
+- Shared intent types and the match route carry these fields into event
+  creation, validate limits, and include details in idempotency keys.
+  Explicit locations take priority over text; future events stay open until start.
+- Main files: CreateActivity.tsx, App.tsx, Home.tsx, ActivitySetup.tsx,
+  match.route.ts, matchingService.ts, shared intent types, and service tests.
+
+## 2026-09-12 — Explicit activity creation
+
+- Added Start a new activity alongside Home intent matching and Activity Setup,
+  preserving keywords, time, and location even when existing activities are available.
+- Added optional create mode through the shared contract and matching service;
+  creation bypasses candidates and joins with user/mode-scoped idempotency.
+- Matching progress and empty results now explain activity creation and link
+  to the created activity. Updated match_spec.md and added service regressions.
+- Main files: Home.tsx, ActivitySetup.tsx, Matching.tsx, MatchResults.tsx,
+  match.route.ts, matchingService.ts, and shared API/service types.
+
 ## 2026-09-12 — Auth0 sign-in, route guards, and returning-user/logout fixes
 
 - Added Auth0 as a third real sign-in option alongside Google/Guest, using
