@@ -1,0 +1,22 @@
+{
+  "matchThreshold": 0.70,
+  "timeToleranceMinutes": 120,
+  "maxCandidates": 50,
+  "recommendationCacheTtlMs": 15000,
+  "recommendationCacheBucketMs": 300000,
+  "semanticCacheTtlMs": 2592000000,
+  "idempotencyTtlMs": 60000,
+  "locationBucketsMeters": {
+    "sameLocation": 0,
+    "veryNearby": 150,
+    "nearby": 500,
+    "sameCampus": 2000
+  },
+  "locationBucketScores": {
+    "sameLocation": 1.0,
+    "veryNearby": 0.9,
+    "nearby": 0.7,
+    "sameCampus": 0.5,
+    "beyond": 0.0
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "activity": 0.40,
+  "time": 0.25,
+  "location": 0.20,
+  "tag": 0.10,
+  "eventQuality": 0.05,
+  "taxonomySimilarity": {
+    "exact": 1.0,
+    "parentChild": 0.8,
+    "sibling": 0.7,
+    "sameCategory": 0.5,
+    "unrelated": 0.0
+  }
+}

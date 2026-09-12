@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+
+# Env files — never commit secrets (Gemini/Google API key, Mongo URI, etc.)
+.env
+.env.*
+!.env.example
+
+# Build output
+dist/
+dist-ssr/
+*.tsbuildinfo
+
+# Generated synthetic demo data (regenerate via scripts/synthetic-data/generate_data.py)
+scripts/synthetic-data/output/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Editor/OS
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.local
+
+# Claude Code local/machine-specific state (not shared project config)
+.claude/settings.local.json
+.claude/scheduled_tasks.lock

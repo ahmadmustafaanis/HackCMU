@@ -1,0 +1,13 @@
+{
+  "gym": "workout",
+  "exercise": "workout",
+  "jog": "running",
+  "run": "running",
+  "programming": "coding",
+  "drawing": "drawing",
+  "hoops": "basketball",
+  "hw": "homework",
+  "pic": "photography",
+  "pics": "photography",
+  "paint": "painting"
+}

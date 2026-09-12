@@ -1,0 +1,18 @@
+{
+  "walking": 30,
+  "coffee": 45,
+  "workout": 60,
+  "coding": 90,
+  "basketball": 90,
+  "studying": 60,
+  "homework": 60,
+  "drawing": 60,
+  "painting": 60,
+  "photography": 60,
+  "lunch": 45,
+  "running": 45,
+  "treadmill": 45,
+  "robotics": 90,
+  "programming": 90,
+  "default": 60
+}

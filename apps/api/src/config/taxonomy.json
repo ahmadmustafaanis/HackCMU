@@ -1,0 +1,23 @@
+{
+  "activities": {
+    "workout": { "category": "fitness" },
+    "treadmill": { "category": "fitness", "parent": "workout" },
+    "running": { "category": "fitness", "related": ["treadmill"] },
+    "basketball": { "category": "fitness" },
+
+    "coding": { "category": "coding" },
+    "programming": { "category": "coding", "parent": "coding" },
+    "robotics": { "category": "coding", "parent": "coding" },
+
+    "drawing": { "category": "art" },
+    "painting": { "category": "art" },
+    "photography": { "category": "art" },
+
+    "studying": { "category": "study" },
+    "homework": { "category": "study" },
+
+    "walking": { "category": "social" },
+    "coffee": { "category": "social" },
+    "lunch": { "category": "social" }
+  }
+}
