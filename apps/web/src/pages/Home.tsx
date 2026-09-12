@@ -4,7 +4,7 @@ import type { Activity } from "shared-types";
 import { api } from "../api/client";
 import ActivityButtonGrid, {
   DEFAULT_ACTIVITIES,
-  metaForCanonicalId,
+  fillHomeActivities,
   type ActivityMeta,
 } from "../components/ActivityButtonGrid";
 import CampusHeatmap from "../components/CampusHeatmap";
@@ -37,7 +37,7 @@ export default function Home() {
       .then((res) => {
         if (cancelled) return;
         if (res.activityIds.length > 0) {
-          setActivities(res.activityIds.map(metaForCanonicalId));
+          setActivities(fillHomeActivities(res.activityIds));
         }
       })
       .catch(() => {
@@ -69,17 +69,15 @@ export default function Home() {
   const firstName = student?.name.split(" ")[0] ?? "there";
 
   return (
-    <>
-      <div className="flex flex-1 flex-col overflow-y-auto pb-4">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <div className="feed-scroll flex min-h-0 flex-1 flex-col pb-4">
         <header className="px-5 pb-2 pt-6">
           <p className="text-sm text-muted">{timeOfDayGreeting()},</p>
-          <h1 className="text-2xl font-semibold text-ink">{firstName} 👋</h1>
+          <h1 className="font-display text-[1.85rem] font-medium leading-tight text-ink">{firstName}</h1>
         </header>
 
         <section className="px-5 py-4">
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted">
-            What do you want to do?
-          </h2>
+          <h2 className="mb-3 font-display text-xl font-medium text-ink">What do you want to do?</h2>
           <ActivityButtonGrid
             activities={activities}
             onSelect={(activity) => navigate(`/activity/${activity.type}/setup`)}
@@ -88,9 +86,7 @@ export default function Home() {
 
         <section className="px-5 py-4">
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-xs font-semibold uppercase tracking-wide text-muted">
-              Trending Around CMU
-            </h2>
+            <h2 className="font-display text-xl font-medium text-ink">Trending around CMU</h2>
             <Link to="/discover" className="text-sm font-medium text-primary">
               See all
             </Link>
@@ -114,7 +110,7 @@ export default function Home() {
             <p className="text-sm text-muted">Couldn&apos;t load trending activities right now.</p>
           )}
           {trendingState === "ready" && trending.length === 0 && (
-            <p className="text-sm text-muted">Nothing trending yet — be the first to start something!</p>
+            <p className="text-sm text-muted">Nothing trending yet. Be the first to start something!</p>
           )}
           {trendingState === "ready" && trending.length > 0 && (
             <div className="-mx-5 flex gap-3 overflow-x-auto px-5 pb-1">
@@ -126,6 +122,6 @@ export default function Home() {
         </section>
       </div>
       <TabBar />
-    </>
+    </div>
   );
 }

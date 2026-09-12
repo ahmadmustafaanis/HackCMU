@@ -22,13 +22,13 @@ export default function ActivityFeedCard({ activity, highlighted = false }: Acti
 
   return (
     <div
-      className={`flex flex-col gap-2 rounded-2xl border bg-card p-4 shadow-sm ${
-        highlighted ? "border-primary ring-2 ring-primary/20" : "border-line"
+      className={`flex flex-col gap-2 rounded-[14px] border bg-card p-4 ${
+        highlighted ? "border-primary" : "border-line"
       }`}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-ink">{activity.title}</p>
+          <p className="truncate font-display text-base font-medium text-ink">{activity.title}</p>
           <p className="text-xs text-muted">{activity.type}</p>
         </div>
         <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium ${STATUS_STYLES[activity.status]}`}>

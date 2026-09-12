@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import type { Match, MatchResponse, Student } from "shared-types";
 import { api } from "../api/client";
 import PersonCard, { type InviteState } from "../components/PersonCard";
+import TabBar from "../components/TabBar";
 import { useSession } from "../state/session";
 
 /** Coordination point with Agent F's Matching.tsx: after a successful
@@ -135,12 +136,13 @@ export default function MatchResults() {
       }));
     } catch {
       setInviteStates((prev) => ({ ...prev, [match.id]: "error" }));
-      setInviteMessages((prev) => ({ ...prev, [match.id]: "Couldn't send the invite — try again." }));
+      setInviteMessages((prev) => ({ ...prev, [match.id]: "Couldn't send the invite. Try again." }));
     }
   }
 
   return (
-    <div className="flex flex-1 flex-col overflow-y-auto p-5">
+    <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex flex-1 flex-col overflow-y-auto p-5">
       <button
         type="button"
         onClick={() => navigate("/home")}
@@ -169,7 +171,7 @@ export default function MatchResults() {
           <div className="mt-8 rounded-2xl border border-line bg-card p-5 text-center">
             <p className="text-sm font-medium text-ink">No matches yet</p>
             <p className="mt-1 text-sm text-muted">
-              Try a different activity or check back in a bit — new people join all the time.
+              Try a different activity or check back in a bit. New people join all the time.
             </p>
           </div>
         )}
@@ -189,6 +191,8 @@ export default function MatchResults() {
             />
           ))}
       </div>
+      </div>
+      <TabBar />
     </div>
   );
 }

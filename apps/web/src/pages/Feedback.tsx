@@ -22,7 +22,7 @@ export default function Feedback() {
   if (!eventId) {
     return (
       <div className="flex flex-1 items-center justify-center p-6 text-center text-sm text-muted">
-        Missing meetup reference — go back and try again.
+        Missing meetup reference. Go back and try again.
       </div>
     );
   }
@@ -44,7 +44,7 @@ export default function Feedback() {
       });
       goToSuccess();
     } catch {
-      setError("Couldn't submit feedback right now — you can try again or skip.");
+      setError("Couldn't submit feedback right now. You can try again or skip.");
     } finally {
       setSubmitting(false);
     }
@@ -69,7 +69,7 @@ export default function Feedback() {
           onChange={(e) => setNote(e.target.value)}
           placeholder="e.g. Great conversation about robotics club!"
           rows={4}
-          className="w-full resize-none rounded-2xl border border-line bg-card p-3 text-sm text-ink placeholder:text-muted focus:border-primary focus:outline-none"
+          className="w-full resize-none rounded-2xl border border-line bg-card p-3 text-sm text-ink placeholder:text-muted focus:border-primary"
         />
       </div>
 

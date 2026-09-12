@@ -49,28 +49,63 @@ function matchesCategory(activity: Activity, category: CategoryFilter): boolean 
   return CATEGORY_KEYWORDS[category].some((kw) => haystack.includes(kw));
 }
 
+function parseWhen(value: string | null): WhenFilter {
+  if (value === "now" || value === "hour" || value === "later" || value === "week") return value;
+  return "all";
+}
+
+function parseCategory(value: string | null): CategoryFilter {
+  if (value === "food" || value === "study" || value === "fitness" || value === "coffee" || value === "social") {
+    return value;
+  }
+  return "all";
+}
+
 export default function Discover() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [activities, setActivities] = useState<Activity[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [search, setSearch] = useState("");
-  const [when, setWhen] = useState<WhenFilter>("all");
+  const [search, setSearch] = useState(() => searchParams.get("q") ?? "");
+  const [when, setWhen] = useState<WhenFilter>(() => parseWhen(searchParams.get("when")));
   const [location, setLocation] = useState<string>(searchParams.get("location") ?? "all");
-  const [category, setCategory] = useState<CategoryFilter>("all");
+  const [category, setCategory] = useState<CategoryFilter>(() => parseCategory(searchParams.get("category")));
 
   useEffect(() => {
+    setWhen(parseWhen(searchParams.get("when")));
     setLocation(searchParams.get("location") ?? "all");
+    setCategory(parseCategory(searchParams.get("category")));
   }, [searchParams]);
+
+  const patchQuery = (patch: Record<string, string | null>) => {
+    const nextParams = new URLSearchParams(searchParams);
+    for (const [key, value] of Object.entries(patch)) {
+      if (!value || value === "all") nextParams.delete(key);
+      else nextParams.set(key, value);
+    }
+    setSearchParams(nextParams, { replace: true });
+  };
+
+  const setSearchFilter = (value: string) => {
+    setSearch(value);
+    patchQuery({ q: value.trim() || null });
+  };
+
+  const setWhenFilter = (value: WhenFilter) => {
+    setWhen(value);
+    patchQuery({ when: value });
+  };
+
+  const setCategoryFilter = (value: CategoryFilter) => {
+    setCategory(value);
+    patchQuery({ category: value });
+  };
 
   const setLocationFilter = (next: string) => {
     const value = next || "all";
     setLocation(value);
-    const nextParams = new URLSearchParams(searchParams);
-    if (value === "all") nextParams.delete("location");
-    else nextParams.set("location", value);
-    setSearchParams(nextParams, { replace: true });
+    patchQuery({ location: value });
   };
 
   const load = () => {
@@ -117,25 +152,32 @@ export default function Discover() {
   const clearFilters = () => {
     setSearch("");
     setWhen("all");
-    setLocationFilter("all");
+    setLocation("all");
     setCategory("all");
+    setSearchParams(new URLSearchParams(), { replace: true });
   };
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden">
-      <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <div className="shrink-0 space-y-2 px-4 pt-4">
         <div>
-          <h1 className="text-xl font-semibold text-ink">Discover</h1>
-          <p className="text-sm text-muted">Find something happening near you.</p>
+          <h1 className="font-display text-[1.85rem] font-medium leading-tight text-ink">Discover</h1>
         </div>
 
-        <input
-          type="search"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="🔍 Search activities…"
-          className="w-full rounded-2xl border border-line bg-card px-4 py-2.5 text-sm text-ink placeholder:text-muted focus:border-primary focus:outline-none"
-        />
+        <div>
+          <label htmlFor="discover-search" className="sr-only">
+            Search activities
+          </label>
+          <input
+            id="discover-search"
+            type="search"
+            value={search}
+            onChange={(e) => setSearchFilter(e.target.value)}
+            placeholder="Search activities…"
+            autoComplete="off"
+            className="w-full rounded-2xl border border-line bg-card px-4 py-2.5 text-sm text-ink placeholder:text-muted focus:border-primary"
+          />
+        </div>
 
         <div className="flex gap-2 overflow-x-auto pb-1">
           {WHEN_CHIPS.map((chip) => {
@@ -144,45 +186,45 @@ export default function Discover() {
               <button
                 key={chip.value}
                 type="button"
-                onClick={() => setWhen(active ? "all" : chip.value)}
-                className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
-                  active ? "border-primary bg-primary text-white" : "border-line bg-card text-ink hover:border-primary-light"
+                onClick={() => setWhenFilter(active ? "all" : chip.value)}
+                className={`pressable shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium ${
+                  active ? "border-primary bg-primary text-white" : "border-line bg-card text-ink hover:border-primary"
                 }`}
               >
                 {chip.label}
               </button>
             );
           })}
+          {locations.length > 0 && (
+            <>
+              <span className="mx-0.5 h-6 w-px shrink-0 self-center bg-line" aria-hidden="true" />
+              <button
+                type="button"
+                onClick={() => setLocationFilter("all")}
+                className={`pressable shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium ${
+                  location === "all" ? "border-primary bg-primary text-white" : "border-line bg-card text-ink hover:border-primary"
+                }`}
+              >
+                All Locations
+              </button>
+              {locations.map((loc) => {
+                const active = location === loc.id;
+                return (
+                  <button
+                    key={loc.id}
+                    type="button"
+                    onClick={() => setLocationFilter(active ? "all" : loc.id)}
+                    className={`pressable shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium ${
+                      active ? "border-primary bg-primary text-white" : "border-line bg-card text-ink hover:border-primary"
+                    }`}
+                  >
+                    {loc.name}
+                  </button>
+                );
+              })}
+            </>
+          )}
         </div>
-
-        {locations.length > 0 && (
-          <div className="flex gap-2 overflow-x-auto pb-1">
-            <button
-              type="button"
-              onClick={() => setLocationFilter("all")}
-              className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
-                location === "all" ? "border-primary bg-primary text-white" : "border-line bg-card text-ink hover:border-primary-light"
-              }`}
-            >
-              All Locations
-            </button>
-            {locations.map((loc) => {
-              const active = location === loc.id;
-              return (
-                <button
-                  key={loc.id}
-                  type="button"
-                  onClick={() => setLocationFilter(active ? "all" : loc.id)}
-                  className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
-                    active ? "border-primary bg-primary text-white" : "border-line bg-card text-ink hover:border-primary-light"
-                  }`}
-                >
-                  📍 {loc.name}
-                </button>
-              );
-            })}
-          </div>
-        )}
 
         <div className="flex gap-1 rounded-2xl border border-line bg-card p-1">
           {CATEGORY_TABS.map((tab) => {
@@ -191,8 +233,8 @@ export default function Discover() {
               <button
                 key={tab.value}
                 type="button"
-                onClick={() => setCategory(tab.value)}
-                className={`flex-1 rounded-xl px-2 py-1.5 text-xs font-semibold transition ${
+                onClick={() => setCategoryFilter(tab.value)}
+                className={`pressable flex-1 rounded-xl px-2 py-1.5 text-xs font-semibold ${
                   active ? "bg-primary text-white" : "text-muted hover:text-ink"
                 }`}
               >
@@ -206,9 +248,11 @@ export default function Discover() {
           activities={preMapFiltered}
           selectedLocationId={location}
           onSelectLocation={(id) => setLocationFilter(id ?? "all")}
+          compact
         />
+      </div>
 
-        <div className="flex flex-col gap-3">
+        <div className="feed-scroll min-h-0 flex-1 space-y-3 px-4 py-3" aria-label="Open activities">
           {loading && <p className="py-6 text-center text-sm text-muted">Loading activities…</p>}
 
           {!loading && error && (
@@ -243,7 +287,6 @@ export default function Discover() {
               />
             ))}
         </div>
-      </div>
       <TabBar />
     </div>
   );

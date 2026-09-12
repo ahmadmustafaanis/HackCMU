@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Button from "../components/Button";
+import { PawMark } from "../components/Icons";
 import GoogleSignInButton from "../components/GoogleSignInButton";
 import { api } from "../api/client";
 import { useSession } from "../state/session";
@@ -54,21 +55,23 @@ export default function Welcome() {
 
   if (restoring) {
     return (
-      <div className="flex flex-1 items-center justify-center">
+      <div className="flex flex-1 items-center justify-center" aria-live="polite" aria-busy="true">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-line border-t-primary" />
+        <span className="sr-only">Restoring your session</span>
       </div>
     );
   }
 
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-10 px-8 py-12 text-center">
-      <div className="flex flex-col items-center gap-4">
-        <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-primary text-4xl shadow-lg shadow-primary/20">
-          🐾
+      <div className="flex flex-col items-center gap-5">
+        <div className="welcome-mark flex h-20 w-20 items-center justify-center rounded-[22px] bg-primary text-white shadow-[0_14px_28px_-16px_rgb(196_18_48_/_0.8)]">
+          <PawMark className="h-10 w-10" />
         </div>
-        <div>
-          <h1 className="text-3xl font-bold text-ink">Scotty&apos;s Circle</h1>
-          <p className="mt-2 text-base text-muted">Find your people. Find your thing.</p>
+        <div className="welcome-title">
+          <h1 className="font-display text-[2.15rem] font-medium leading-[1.1] text-ink">Scotty’s Circle</h1>
+          <span className="welcome-rule mx-auto mt-3 block h-px w-16 bg-primary" />
+          <p className="mt-3 text-base text-muted">Find your people. Find your thing.</p>
         </div>
       </div>
 
@@ -86,7 +89,7 @@ export default function Welcome() {
         </Button>
 
         {error && <p className="text-sm text-primary">{error}</p>}
-        <p className="text-xs text-muted">Guest mode skips real sign-in — no Google account needed to try the app.</p>
+        <p className="text-xs text-muted">Guest mode skips real sign-in. No Google account needed to try the app.</p>
       </div>
     </div>
   );

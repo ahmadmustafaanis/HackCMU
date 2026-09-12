@@ -12,12 +12,10 @@ React + Vite + TypeScript + Tailwind CSS. Mobile-first: design for a
 - `src/api/client.ts` — typed fetch wrapper against `apps/api`, using the exact request/response types from `shared-types/src/api.ts`. Don't hand-rewrite response shapes — import the types.
 - `src/state/` — session/user context (demo auth token, current draft intent while building an activity request).
 
-## Visual language (from the mockup)
+## Visual language
 
-Deep maroon/cardinal primary color, rounded cards, a paw-print mark, a
-bottom tab bar (Home / Discover / Activities / Connections / Profile).
-Faithfully match palette, layout structure, iconography, and flow — this is
-not required to be a pixel-accurate reproduction of the mockup file.
+Light campus print: Carnegie red `#C41230`, tinted black, warm white. Fraunces
+for titles, Source Sans 3 for UI. Stroke icons, not emoji. See `DESIGN.md`.
 
 ## Conventions
 

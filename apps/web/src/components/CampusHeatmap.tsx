@@ -30,9 +30,9 @@ const OSM_TILES = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
 const OSM_ATTR = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
 
 function colorForIntensity(t: number): string {
-  if (t < 0.34) return "#f0b7c0";
-  if (t < 0.67) return "#a83b52";
-  return "#7a2338";
+  if (t < 0.34) return "#f4c4c9";
+  if (t < 0.67) return "#e23a4f";
+  return "#c41230";
 }
 
 function isNearCampus(coords: Coords): boolean {
@@ -66,9 +66,9 @@ function ActivityHeat({ points }: { points: Array<[number, number, number]> }) {
       minOpacity: 0.28,
       maxZoom: 18,
       gradient: {
-        0.2: "#f0b7c0",
-        0.5: "#a83b52",
-        0.85: "#7a2338",
+        0.2: "#f4c4c9",
+        0.5: "#e23a4f",
+        0.85: "#c41230",
       },
     }).addTo(map);
     return () => {
@@ -174,10 +174,11 @@ export default function CampusHeatmap({
 
   return (
     <div className="overflow-hidden rounded-2xl border border-line bg-card shadow-sm">
-      <div className={`relative ${compact ? "h-52" : "h-72"}`}>
+      <div className={`relative ${compact ? "h-40" : "h-56"}`}>
         <MapContainer
           center={CMU_CENTER}
           zoom={16}
+          zoomControl={false}
           scrollWheelZoom={false}
           className="h-full w-full"
           attributionControl
@@ -217,31 +218,54 @@ export default function CampusHeatmap({
           )}
         </MapContainer>
 
+        <div className="map-zoom">
+          <button type="button" className="pressable" aria-label="Zoom in" onClick={() => mapRef.current?.zoomIn()}>
+            +
+          </button>
+          <button type="button" className="pressable" aria-label="Zoom out" onClick={() => mapRef.current?.zoomOut()}>
+            −
+          </button>
+        </div>
+
+        {spots.length > 0 && (
+          <nav aria-label="Campus locations" className="sr-only">
+            <ul>
+              {spots.map((spot) => (
+                <li key={spot.locationId}>
+                  <button type="button" onClick={() => handleSelect(spot.locationId)}>
+                    {spot.name}, {spot.eventCount} open {spot.eventCount === 1 ? "activity" : "activities"}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        )}
+
         <button
           type="button"
           onClick={locateMe}
-          className="absolute right-2 top-2 z-[500] rounded-full border border-line bg-card px-3 py-1.5 text-[11px] font-semibold text-ink shadow-sm"
+          className="pressable absolute right-2 top-2 z-[500] rounded-full border border-line bg-card px-3 py-1.5 text-[11px] font-semibold text-ink"
         >
           {geoStatus === "asking" ? "Locating…" : geoStatus === "ok" ? "Recenter on me" : "Show my location"}
         </button>
 
         {geoStatus === "denied" && (
-          <p className="pointer-events-none absolute left-2 top-2 z-[500] max-w-[70%] rounded-lg bg-card/95 px-2 py-1 text-[10px] text-muted">
-            Location blocked — allow it to see where you are.
+          <p className="pointer-events-none absolute right-2 top-12 z-[500] max-w-[60%] rounded-lg bg-card/95 px-2 py-1 text-[10px] text-muted">
+            Location blocked. Allow it to see where you are.
           </p>
         )}
 
         {active && (
           <div className="pointer-events-none absolute bottom-2 left-2 right-2 z-[500] rounded-xl bg-ink/90 px-3 py-2 text-white">
             <p className="text-xs font-semibold">{active.name}</p>
-            <p className="text-[11px] text-white/80">
+            <p className="tabular-nums text-[11px] text-white/80">
               {active.eventCount} open {active.eventCount === 1 ? "activity" : "activities"} · {active.people} joined
             </p>
           </div>
         )}
         {!active && me && !isNearCampus(me) && (
           <div className="pointer-events-none absolute bottom-2 left-2 right-2 z-[500] rounded-xl bg-ink/90 px-3 py-2 text-[11px] text-white/90">
-            You&apos;re not on campus — tap “Recenter on me” to jump to your pin.
+            You&apos;re not on campus. Tap “Recenter on me” to jump to your pin.
           </div>
         )}
       </div>
@@ -249,7 +273,7 @@ export default function CampusHeatmap({
       <div className="flex items-center justify-between gap-2 border-t border-line px-3 py-2">
         <div className="flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-wide text-muted">
           <span>Quiet</span>
-          <span className="h-1.5 w-16 rounded-full bg-gradient-to-r from-[#f0b7c0] to-[#7a2338]" />
+          <span className="h-1.5 w-16 rounded-full bg-gradient-to-r from-[#f4c4c9] to-[#c41230]" />
           <span>Busy</span>
         </div>
         {!compact && onSelectLocation && selectedLocationId !== "all" && (

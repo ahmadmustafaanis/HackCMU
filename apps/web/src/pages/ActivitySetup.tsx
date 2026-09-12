@@ -168,7 +168,7 @@ export default function ActivitySetup() {
               value={freeText}
               onChange={(e) => setFreeText(e.target.value)}
               placeholder='e.g. "work on my robotics project"'
-              className="rounded-xl border border-line bg-card px-4 py-3 text-sm text-ink placeholder:text-muted focus:border-primary focus:outline-none"
+              className="rounded-xl border border-line bg-card px-4 py-3 text-sm text-ink placeholder:text-muted focus:border-primary"
             />
           </div>
 
@@ -208,9 +208,10 @@ export default function ActivitySetup() {
             {timeOption === "later" && (
               <input
                 type="datetime-local"
+                aria-label="Custom date and time"
                 value={laterValue}
                 onChange={(e) => setLaterValue(e.target.value)}
-                className="mt-3 w-full rounded-xl border border-line bg-card px-4 py-3 text-sm text-ink focus:border-primary focus:outline-none"
+                className="mt-3 w-full rounded-xl border border-line bg-card px-4 py-3 text-sm text-ink focus:border-primary"
               />
             )}
           </div>
