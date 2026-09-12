@@ -36,6 +36,7 @@ import { createFeedbackRouter } from "./routes/feedback.route.js";
 import { createMatchRouter } from "./routes/match.route.js";
 import { createMatchesRouter } from "./routes/matches.route.js";
 import { createOnboardingRouter } from "./routes/onboarding.route.js";
+import { createNotificationsRouter } from "./routes/notifications.route.js";
 import { createProfileRouter } from "./routes/profile.route.js";
 import { createRecommendRouter } from "./routes/recommend.route.js";
 
@@ -248,6 +249,7 @@ async function bootstrap(): Promise<void> {
 
   app.use("/api/auth", createAuthRouter());
   app.use("/api/onboarding", createOnboardingRouter());
+  app.use("/api/notifications", createNotificationsRouter());
   app.use("/api/profile", createProfileRouter());
   app.use("/api/recommend", createRecommendRouter({ recommendationService }));
   app.use("/api/match", createMatchRouter({ matchingService, userProfileService, idempotencyRunner }));

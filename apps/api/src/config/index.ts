@@ -16,6 +16,7 @@ export interface CanonicalLocation {
   name: string;
   lat: number;
   lng: number;
+  aliases?: string[];
 }
 
 function assert(condition: boolean, message: string): void {

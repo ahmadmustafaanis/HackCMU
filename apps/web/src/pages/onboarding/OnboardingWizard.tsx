@@ -28,13 +28,10 @@ const INTERESTS: Interest[] = [
 const VIBES: Vibe[] = ["Social", "Curious", "Focused", "Chill", "Networking", "Casual"];
 const VIBES_MAX = 3;
 
-const AVAILABILITY: string[] = ["Morning", "Afternoon", "Evening", "Weekends"];
-
-const STEP_TITLES = ["What are you into?", "What's your vibe?", "When are you free?"];
+const STEP_TITLES = ["What are you into?", "What's your vibe?"];
 const STEP_SUBTITLES = [
   "Pick a few interests — this helps us find your people.",
   `Choose up to ${VIBES_MAX} that describe how you like to hang out.`,
-  "Select the windows that usually work for you.",
 ];
 
 export default function OnboardingWizard() {
@@ -43,7 +40,6 @@ export default function OnboardingWizard() {
   const [step, setStep] = useState(0);
   const [interests, setInterests] = useState<Interest[]>([]);
   const [vibes, setVibes] = useState<Vibe[]>([]);
-  const [availability, setAvailability] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -55,11 +51,7 @@ export default function OnboardingWizard() {
     setVibes((prev) => (prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]));
   };
 
-  const toggleAvailability = (value: string) => {
-    setAvailability((prev) => (prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]));
-  };
-
-  const canContinue = step === 0 ? interests.length > 0 : step === 1 ? vibes.length > 0 : availability.length > 0;
+  const canContinue = step === 0 ? interests.length > 0 : vibes.length > 0;
 
   const handleBack = () => {
     setError(null);
@@ -67,7 +59,7 @@ export default function OnboardingWizard() {
   };
 
   const handleContinue = async () => {
-    if (step < 2) {
+    if (step < 1) {
       setStep((s) => s + 1);
       return;
     }
@@ -82,7 +74,7 @@ export default function OnboardingWizard() {
         userId: student.id,
         interests,
         vibes,
-        availabilityLabel: availability.join(", "),
+        availabilityLabel: "Flexible",
       });
       updateStudent(result);
       navigate("/home");
@@ -108,10 +100,10 @@ export default function OnboardingWizard() {
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between">
           <span className="text-xs font-semibold uppercase tracking-wide text-primary">Onboarding</span>
-          <span className="text-xs font-medium text-muted">{step + 1}/3</span>
+          <span className="text-xs font-medium text-muted">{step + 1}/2</span>
         </div>
         <div className="flex gap-1.5">
-          {[0, 1, 2].map((i) => (
+          {[0, 1].map((i) => (
             <div key={i} className={`h-1.5 flex-1 rounded-full ${i <= step ? "bg-primary" : "bg-line"}`} />
           ))}
         </div>
@@ -127,9 +119,6 @@ export default function OnboardingWizard() {
         {step === 1 && (
           <OnboardingStepper options={VIBES} selected={vibes} onToggle={toggleVibe} maxSelect={VIBES_MAX} />
         )}
-        {step === 2 && (
-          <OnboardingStepper options={AVAILABILITY} selected={availability} onToggle={toggleAvailability} />
-        )}
       </Card>
 
       {error && <p className="text-sm text-primary">{error}</p>}
@@ -141,7 +130,7 @@ export default function OnboardingWizard() {
           </Button>
         )}
         <Button onClick={handleContinue} className="flex-1" disabled={!canContinue || submitting}>
-          {step < 2 ? "Continue" : submitting ? "Saving…" : "Finish"}
+          {step < 1 ? "Continue" : submitting ? "Saving…" : "Finish"}
         </Button>
       </div>
     </div>

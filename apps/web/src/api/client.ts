@@ -9,6 +9,7 @@ import type {
   FeedbackResponse,
   InviteRequest,
   InviteResponse,
+  JoinEventResponse,
   MatchRequest,
   MatchResponse,
   MatchesResponse,
@@ -20,6 +21,7 @@ import type {
   SendMessageRequest,
   SendMessageResponse,
   SuggestionsResponse,
+  NotificationsResponse,
 } from "shared-types";
 
 const BASE = "/api";
@@ -66,6 +68,8 @@ export const api = {
   recommend: (body: RecommendRequest) => post<RecommendRequest, RecommendResponse>("/recommend", body),
   match: (body: MatchRequest) => post<MatchRequest, MatchResponse>("/match", body),
   getActivities: () => request<ActivitiesResponse>("/activities"),
+  getMyActivities: () => request<ActivitiesResponse>("/activities/mine"),
+  joinEvent: (eventId: string) => post<{ eventId: string }, JoinEventResponse>(`/activities/${eventId}/join`, { eventId }),
   invite: (eventId: string, body: InviteRequest) => post<InviteRequest, InviteResponse>(`/activities/${eventId}/invite`, body),
   getMatches: (userId: string) => request<MatchesResponse>(`/matches/${userId}`),
   getChatHistory: (conversationId: string) => request<ChatHistoryResponse>(`/chat/${conversationId}`),
@@ -74,4 +78,5 @@ export const api = {
   submitFeedback: (body: FeedbackRequest) => post<FeedbackRequest, FeedbackResponse>("/feedback", body),
   getConnections: (userId: string) => request<ConnectionsResponse>(`/connections/${userId}`),
   getDebugDatabase: () => request<DebugDatabaseResponse>("/debug/database"),
+  getNotifications: () => request<NotificationsResponse>("/notifications"),
 };

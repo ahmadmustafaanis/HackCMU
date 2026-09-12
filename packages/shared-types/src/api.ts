@@ -81,6 +81,15 @@ export interface ActivitiesResponse {
   activities: Activity[];
 }
 
+export interface JoinEventRequest {
+  eventId: string;
+}
+
+export interface JoinEventResponse {
+  status: "accepted" | "full" | "expired" | "not_found";
+  activity?: Activity;
+}
+
 // POST /api/activities/:eventId/invite  (UI's "Invite" button — attempts to
 // join that specific candidate's event through the same join path match()
 // uses)
@@ -133,4 +142,17 @@ export interface DebugCollection {
 export interface DebugDatabaseResponse {
   database: string;
   collections: DebugCollection[];
+}
+
+export interface Notification {
+  id: string;
+  type: "EVENT_JOINED";
+  eventId: string;
+  actorId: string;
+  message: string;
+  createdAt: string;
+}
+
+export interface NotificationsResponse {
+  notifications: Notification[];
 }

@@ -630,3 +630,21 @@ The goal is to drive this ratio as low as possible without reducing semantic und
 The fundamental design rule is:
 
 > **Use semantic intelligence as rarely as possible, and use deterministic, indexed, transactional logic for high-frequency matching decisions.**
+
+## Implemented Product Decisions
+
+- Onboarding collects interests and vibes only. Availability is chosen with the
+      activity intent and is not a separate onboarding step.
+- The Home draft supports text such as `treadmill in 10 mins at CUC`.
+      Relative time and canonical building aliases are extracted deterministically
+      before semantic activity parsing. Structured selections take priority.
+- Building coordinates are configured in JSON. Browser geolocation selects the
+      nearest building and highlights it in the map/location controls; CUC is the
+      fallback when permission is unavailable.
+- Event cards open a read-only details screen. Joining is a separate explicit
+      action and atomically adds the user to the event.
+- Joined or created events are shown in **My Activities**. The duplicate
+      Discover/Activities surface is replaced by that one tab.
+- Event labels show only start time. Duration remains stored for matching.
+- Joining creates a durable host notification record. The browser uses the
+      Notification API when permission and support are available.

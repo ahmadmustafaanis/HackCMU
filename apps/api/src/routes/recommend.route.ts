@@ -28,7 +28,8 @@ function formatTimeLabel(startIso: string, endIso: string): string {
     const period = hours24 < 12 ? "AM" : "PM";
     return `${hours12}:${minutes} ${period}`;
   };
-  return `${format(startIso)} – ${format(endIso)}`;
+  void endIso;
+  return format(startIso);
 }
 
 export function createRecommendRouter(deps: { recommendationService: RecommendationService }): Router {

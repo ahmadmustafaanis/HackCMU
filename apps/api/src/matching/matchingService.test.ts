@@ -91,6 +91,10 @@ class FakeEventRepository implements EventRepository {
   async listOpen(_now: Date, limit: number): Promise<EventRecord[]> {
     return this.events.filter((e) => e.status === "OPEN").slice(0, limit);
   }
+
+  async listForUser(): Promise<EventRecord[]> {
+    return [];
+  }
 }
 
 class FakeSemanticParser implements SemanticParser {

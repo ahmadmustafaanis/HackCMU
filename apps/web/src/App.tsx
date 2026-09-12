@@ -32,7 +32,8 @@ export default function App() {
         <Route path="/meetup/:eventId" element={<Meetup />} />
         <Route path="/feedback/:eventId" element={<Feedback />} />
         <Route path="/success/:matchId" element={<Success />} />
-        <Route path="/discover" element={<Discover />} />
+        <Route path="/discover" element={<Navigate to="/activities" replace />} />
+        <Route path="/activities" element={<Discover />} />
         <Route path="/connections" element={<Connections />} />
         <Route path="/debug/database" element={<DebugDatabase />} />
         <Route path="/profile" element={<Profile />} />

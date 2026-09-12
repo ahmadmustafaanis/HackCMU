@@ -11,6 +11,7 @@ import CampusHeatmap from "../components/CampusHeatmap";
 import TabBar from "../components/TabBar";
 import TrendingCard from "../components/TrendingCard";
 import { useSession } from "../state/session";
+import buildings from "../config/buildings.json";
 
 function timeOfDayGreeting(): string {
   const hour = new Date().getHours();
@@ -29,6 +30,13 @@ const LOCATION_OPTIONS = [
   { id: "gates-hillman", label: "Gates" },
   { id: "tepper-quad", label: "Tepper" },
 ];
+
+function nearestBuilding(lat: number, lng: number): string {
+  return buildings.reduce((nearest, building) => {
+    const distance = (building.lat - lat) ** 2 + (building.lng - lng) ** 2;
+    return distance < nearest.distance ? { id: building.id, distance } : nearest;
+  }, { id: "cohon-university-center", distance: Number.POSITIVE_INFINITY }).id;
+}
 
 export default function Home() {
   const { student } = useSession();
@@ -112,6 +120,16 @@ export default function Home() {
       window.clearTimeout(timer);
     };
   }, [locationId, selectedActivity, student, time]);
+
+  useEffect(() => {
+    if (!student || !("Notification" in window)) return;
+    if (Notification.permission === "default") Notification.requestPermission().catch(() => undefined);
+    api.getNotifications().then(({ notifications }) => {
+      if (Notification.permission !== "granted") return;
+      const latest = notifications[0];
+      if (latest) new Notification("Scotty's Circle", { body: latest.message });
+    }).catch(() => undefined);
+  }, [student]);
 
   function startMatching() {
     const intent: StructuredIntentInput = {
@@ -223,7 +241,7 @@ export default function Home() {
             <h2 className="text-xs font-semibold uppercase tracking-wide text-muted">
               Trending Around CMU
             </h2>
-            <Link to="/discover" className="text-sm font-medium text-primary">
+            <Link to="/activities" className="text-sm font-medium text-primary">
               See all
             </Link>
           </div>
@@ -233,9 +251,10 @@ export default function Home() {
               <CampusHeatmap
                 activities={trending}
                 compact
+                selectedLocationId={locationId || "all"}
+                onUserLocation={({ lat, lng }) => setLocationId(nearestBuilding(lat, lng))}
                 onSelectLocation={(id) => {
-                  if (id) navigate(`/discover?location=${encodeURIComponent(id)}`);
-                  else navigate("/discover");
+                  if (id) setLocationId(id);
                 }}
               />
             </div>
