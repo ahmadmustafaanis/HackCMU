@@ -3,8 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Auth0SignInButton from "../components/Auth0SignInButton";
 import Button from "../components/Button";
-import { PawMark } from "../components/Icons";
 import GoogleSignInButton from "../components/GoogleSignInButton";
+import { PawMark } from "../components/Icons";
 import { api } from "../api/client";
 import { hasCompletedOnboarding } from "../lib/onboarding";
 import { useSession } from "../state/session";
@@ -19,11 +19,7 @@ export default function Welcome() {
   // Already signed in (session restored + verified on load) — skip straight
   // to Home instead of showing the welcome screen again. Deliberately keyed
   // ONLY on `restoring` (not `student`): this must fire exactly once, right
-  // when restoration finishes, to redirect a RETURNING visitor. If it also
-  // re-ran on every `student` change, it would race a fresh interactive
-  // sign-in's own `navigate("/onboarding")` below (setSession's state update
-  // and that navigate can land in the same render pass) and incorrectly
-  // skip onboarding for brand-new sign-ins too.
+  // when restoration finishes, to redirect a RETURNING visitor.
   useEffect(() => {
     if (!restoring && student) navigate("/home", { replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -43,19 +39,10 @@ export default function Welcome() {
     }
   };
 
-  // Surfaces Auth0 SDK-level failures (e.g. a redirect callback that Auth0
-  // itself rejected) — distinct from the exchange effect below, which
-  // handles our OWN backend call failing after a successful Auth0 login.
   useEffect(() => {
     if (auth0Error) setError("Auth0 sign-in failed. Please try again.");
   }, [auth0Error]);
 
-  // Completes an Auth0 Universal Login redirect: loginWithRedirect() leaves
-  // and re-enters the app (unlike the Google/Guest handlers, which resolve
-  // in place), so once useAuth0() reports isAuthenticated we pick up here,
-  // exchange the ID token for our own session, and continue exactly like
-  // the other two sign-in paths. `exchangeStarted` guards against React's
-  // dev-only StrictMode double-effect-invoke firing this twice.
   const exchangeStarted = useRef(false);
   useEffect(() => {
     if (auth0Loading || !auth0Authenticated || student || exchangeStarted.current) return;

@@ -5,13 +5,20 @@ landed without reconstructing it from the diff.
 
 Newest entries go at the top. Keep each entry short: intent, files, follow-ups.
 
-## 2026-09-12 — Merge main (Auth0 + matching) into visual system
+## 2026-09-12 — Merge latest main into yuxuan_changes
 
-- Combined Carnegie UI / 8-tile Home / Discover inner-scroll with Auth0
-  route guards, intent matching, and event-centric MatchResults from main.
-- Files: `App.tsx`, `Home.tsx`, `Discover.tsx`, `TabBar.tsx`, `MatchResults.tsx`,
-  `Welcome.tsx`, `Login.tsx`, `CampusHeatmap.tsx`
-- Follow-up: confirm Auth0 env vars locally; Discover lives at `/activities`.
+- Pulled the hybrid Carnegie + Auth0/matching Home/Discover from main onto this
+  branch. Discover still titles My Activities vs Discover by route.
+- Follow-up: run `npm install` if Auth0 deps are missing locally.
+
+## 2026-09-12 — Hybrid merge: Carnegie visual system + Auth0/matching/intent + integrated Home/Discover
+
+- Performed manual hybrid merge combining `origin/main` backend (Auth0 authentication, JWT verification, 2-question onboarding, matching algorithm and post-match event join logic, notifications, debug route, locations) with `yuxuan_changes_clean` visual language (Carnegie `#C41230` palette, stroke icon set in `Icons.tsx`, Newsreader + Source Sans 3 typography).
+- Replaced the components under Home's search bar with the Discover layout (when-filter chips, location pills, category segmented tabs, `CampusHeatmap`, and an interactive feed of `ActivityFeedCard`s with click-through to `/meetup/:id`).
+- Kept search bar & intent matching from main (free-text NLP extraction, location pills, time dropdown, activity button selection, live "Already happening" recommendations, and "Find people" matching action) styled with Carnegie tokens and stroke icons.
+- Retained Auth0 + Google + Guest login on Welcome and Login screens with `hasCompletedOnboarding()` checks, `RequireAuth` route guards, and provider-aware logout in `Profile.tsx`.
+- Files: `Home.tsx`, `Welcome.tsx`, `Login.tsx`, `Profile.tsx`, `OnboardingWizard.tsx`, `CampusHeatmap.tsx`, `ActivityButtonGrid.tsx`, `ActivityFeedCard.tsx`, `TrendingCard.tsx`, `TabBar.tsx`, `App.tsx`, `index.css`, `Icons.tsx`, `apps/api/`, `packages/shared-types/`.
+- Follow-up: test full end-to-end interactive flows with a running dev server.
 
 ## 2026-09-12 — Equal-length Home / Discover shells
 

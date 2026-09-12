@@ -173,6 +173,15 @@ export function DrawingIcon(props: IconProps) {
   );
 }
 
+export function SearchIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <circle cx="11" cy="11" r="6.5" {...stroke} />
+      <path d="m15.8 15.8 4.2 4.2" {...stroke} />
+    </Icon>
+  );
+}
+
 export function SparkIcon(props: IconProps) {
   return (
     <Icon {...props}>

@@ -77,20 +77,26 @@ export function fillHomeActivities(preferredIds: string[]): ActivityMeta[] {
 
 interface ActivityButtonGridProps {
   activities: ActivityMeta[];
+  selectedId?: string;
   onSelect: (activity: ActivityMeta) => void;
 }
 
-export default function ActivityButtonGrid({ activities, onSelect }: ActivityButtonGridProps) {
+export default function ActivityButtonGrid({ activities, selectedId, onSelect }: ActivityButtonGridProps) {
   return (
     <div className="grid grid-cols-4 gap-3">
       {activities.map((activity) => {
         const Glyph = ACTIVITY_ICONS[activity.type];
+        const isSelected = selectedId === activity.canonicalId || selectedId === activity.type;
         return (
           <button
             key={activity.type}
             type="button"
             onClick={() => onSelect(activity)}
-            className="pressable flex flex-col items-center gap-1.5 rounded-[14px] border border-line bg-card px-2 py-3 text-center hover:border-primary hover:text-primary"
+            className={`pressable flex flex-col items-center gap-1.5 rounded-[14px] border px-2 py-3 text-center transition ${
+              isSelected
+                ? "border-primary bg-primary/10 text-primary ring-2 ring-primary/20"
+                : "border-line bg-card hover:border-primary hover:text-primary"
+            }`}
           >
             {Glyph ? <Glyph className="h-6 w-6 text-primary" /> : <SparkIcon className="h-6 w-6 text-primary" />}
             <span className="text-[11px] font-medium leading-tight text-ink">{activity.label}</span>

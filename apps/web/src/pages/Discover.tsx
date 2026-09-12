@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import type { Activity } from "shared-types";
 import { api } from "../api/client";
 import ActivityFeedCard from "../components/ActivityFeedCard";
@@ -62,9 +62,6 @@ function parseCategory(value: string | null): CategoryFilter {
 }
 
 export default function Discover() {
-  const navigate = useNavigate();
-  const routeLocation = useLocation();
-  const myActivities = routeLocation.pathname === "/activities";
   const [searchParams, setSearchParams] = useSearchParams();
   const [activities, setActivities] = useState<Activity[] | null>(null);
   const [loading, setLoading] = useState(true);
@@ -114,13 +111,14 @@ export default function Discover() {
   const load = () => {
     setLoading(true);
     setError(null);
-    (myActivities ? api.getMyActivities() : api.getActivities())
+    api
+      .getActivities()
       .then((res) => setActivities(res.activities))
       .catch(() => setError("Couldn't load activities right now."))
       .finally(() => setLoading(false));
   };
 
-  useEffect(load, [myActivities]);
+  useEffect(load, []);
 
   const locations = useMemo(() => {
     const byId = new Map<string, string>();
@@ -290,7 +288,6 @@ export default function Discover() {
               <ActivityFeedCard
                 key={activity.id}
                 activity={activity}
-                onClick={() => navigate(`/meetup/${activity.id}`)}
                 highlighted={location !== "all" && (activity.locationId ?? activity.approximateLocation) === location}
               />
             ))}

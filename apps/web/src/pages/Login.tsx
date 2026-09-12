@@ -54,7 +54,7 @@ export default function Login() {
         </div>
         <div>
           <h1 className="font-display text-2xl font-medium text-ink">Sign in to Scotty&apos;s Circle</h1>
-          <p className="mt-1 text-sm text-muted">Use your Google account to continue.</p>
+          <p className="mt-1 text-sm text-muted">Use your Google or Auth0 account to continue.</p>
         </div>
 
         <GoogleSignInButton onCredential={handleGoogleCredential} />

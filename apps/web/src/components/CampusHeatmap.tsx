@@ -13,7 +13,7 @@ interface Hotspot {
   people: number;
 }
 
-interface Coords {
+export interface Coords {
   lat: number;
   lng: number;
 }
@@ -176,8 +176,6 @@ export default function CampusHeatmap({
 
   useEffect(() => {
     if (requestLocationOnMount) locateMe();
-    // The Home page requests once when it mounts; the button remains available
-    // for an explicit retry after a denied or timed-out request.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [requestLocationOnMount]);
 
@@ -208,7 +206,7 @@ export default function CampusHeatmap({
                 center={[spot.lat, spot.lng]}
                 radius={selected ? 11 : 8}
                 pathOptions={{
-                  color: selected ? "#201a1c" : "#ffffff",
+                  color: selected ? "#1c1214" : "#ffffff",
                   weight: selected ? 3 : 2,
                   fillColor: colorForIntensity(t),
                   fillOpacity: 0.95,
