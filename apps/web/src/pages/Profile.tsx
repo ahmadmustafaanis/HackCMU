@@ -1,7 +1,10 @@
 import { useAuth0 } from "@auth0/auth0-react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useSession } from "../state/session";
+import { api } from "../api/client";
+import { RatingBadge } from "../components/StarRating";
 import TabBar from "../components/TabBar";
+import { useSession } from "../state/session";
 
 const SETTINGS_ROWS = [
   { label: "Edit Profile", icon: "✏️" },
@@ -29,6 +32,16 @@ export default function Profile() {
   const { student, provider, clearSession } = useSession();
   const { logout: auth0Logout } = useAuth0();
   const navigate = useNavigate();
+  const [rating, setRating] = useState({ average: student?.ratingAverage, count: student?.ratingCount });
+
+  useEffect(() => {
+    if (!student) return;
+    setRating({ average: student.ratingAverage, count: student.ratingCount });
+    api
+      .getProfile(student.id)
+      .then((profile) => setRating({ average: profile.ratingAverage, count: profile.ratingCount }))
+      .catch(() => undefined);
+  }, [student]);
 
   const handleReset = () => {
     const wasAuth0 = provider === "auth0";
@@ -62,6 +75,9 @@ export default function Profile() {
                 <p className="text-sm text-muted">
                   {student.program} · {student.year}
                 </p>
+                <div className="mt-2 flex justify-center">
+                  <RatingBadge average={rating.average} count={rating.count} />
+                </div>
               </div>
               {student.bio && <p className="text-sm text-ink/80">{student.bio}</p>}
               <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs text-muted">

@@ -13,6 +13,8 @@ interface RawUserDocument {
   preferredActivities?: string[];
   location?: { type: "Point"; coordinates: [number, number] };
   availability?: string;
+  ratingAverage?: number;
+  ratingCount?: number;
 }
 
 function computeInitials(name: string): string {
@@ -52,6 +54,8 @@ export class MongoUserProfileService implements UserProfileService {
       approximateLocation,
       walkingMinutes: 0,
       availabilityLabel: doc.availability ?? "Anytime",
+      ...(typeof doc.ratingAverage === "number" ? { ratingAverage: doc.ratingAverage } : {}),
+      ...(typeof doc.ratingCount === "number" ? { ratingCount: doc.ratingCount } : {}),
     };
   }
 }

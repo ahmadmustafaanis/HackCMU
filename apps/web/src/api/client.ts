@@ -6,6 +6,7 @@ import type {
   DebugDatabaseResponse,
   DemoLoginRequest,
   DemoLoginResponse,
+  EventRatingsResponse,
   FeedbackRequest,
   FeedbackResponse,
   InviteRequest,
@@ -21,6 +22,8 @@ import type {
   RecommendResponse,
   SendMessageRequest,
   SendMessageResponse,
+  SubmitPeerRatingsRequest,
+  SubmitPeerRatingsResponse,
   SuggestionsResponse,
   NotificationsResponse,
 } from "shared-types";
@@ -79,6 +82,9 @@ export const api = {
   sendMessage: (conversationId: string, body: SendMessageRequest) =>
     post<SendMessageRequest, SendMessageResponse>(`/chat/${conversationId}`, body),
   submitFeedback: (body: FeedbackRequest) => post<FeedbackRequest, FeedbackResponse>("/feedback", body),
+  getEventRatings: (eventId: string) => request<EventRatingsResponse>(`/activities/${eventId}/ratings`),
+  submitPeerRatings: (eventId: string, body: SubmitPeerRatingsRequest) =>
+    post<SubmitPeerRatingsRequest, SubmitPeerRatingsResponse>(`/activities/${eventId}/ratings`, body),
   getConnections: (userId: string) => request<ConnectionsResponse>(`/connections/${userId}`),
   getDebugDatabase: () => request<DebugDatabaseResponse>("/debug/database"),
   getNotifications: () => request<NotificationsResponse>("/notifications"),

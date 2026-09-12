@@ -43,6 +43,9 @@ export interface Student {
   /** Google account profile photo, when signed in with Google. Public-safe
    * (unlike email/googleId, which are never exposed on this type). */
   avatarUrl?: string;
+  /** Uber-style mean of peer ratings (1–5). Omitted until someone has been rated. */
+  ratingAverage?: number;
+  ratingCount?: number;
 }
 
 export type MatchStatus = "suggested" | "invited" | "accepted" | "connected";
@@ -70,6 +73,8 @@ export interface Activity {
   lat?: number;
   lng?: number;
   timeLabel: string;
+  startTime: string;
+  endTime: string;
   walkingMinutes: number;
   attendees: string[];
   attendeeCount: number;
@@ -77,6 +82,9 @@ export interface Activity {
   hostId: string;
   vibe: Vibe;
   status: ActivityStatus;
+  /** True when the viewer was a participant and the event has ended. */
+  canRate?: boolean;
+  hasRated?: boolean;
 }
 
 export interface ChatMessage {

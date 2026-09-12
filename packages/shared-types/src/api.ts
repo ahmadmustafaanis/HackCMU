@@ -134,6 +134,33 @@ export interface FeedbackRequest {
 }
 export type FeedbackResponse = { ok: true };
 
+export type StarScore = 1 | 2 | 3 | 4 | 5;
+
+export interface PeerRatingInput {
+  userId: string;
+  score: StarScore;
+}
+
+// POST /api/activities/:eventId/ratings
+export interface SubmitPeerRatingsRequest {
+  ratings: PeerRatingInput[];
+}
+export type SubmitPeerRatingsResponse = { ok: true };
+
+export interface RateablePerson {
+  student: Student;
+  existingScore?: StarScore;
+}
+
+// GET /api/activities/:eventId/ratings
+export interface EventRatingsResponse {
+  eventId: string;
+  ended: boolean;
+  endTime: string;
+  submitted: boolean;
+  people: RateablePerson[];
+}
+
 // GET /api/connections/:userId
 export interface ConnectionsResponse {
   connections: Match[];

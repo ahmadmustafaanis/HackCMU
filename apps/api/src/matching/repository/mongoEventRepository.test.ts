@@ -16,8 +16,8 @@ function buildEvent(overrides: Partial<Omit<EventRecord, "id">> = {}): Omit<Even
     canonicalActivity: "coffee",
     category: "food",
     tags: ["casual"],
-    startTime: new Date(now).toISOString(),
-    endTime: new Date(now + HOUR_MS).toISOString(),
+    startTime: new Date(now + 30 * 60_000).toISOString(),
+    endTime: new Date(now + 90 * 60_000).toISOString(),
     durationMinutes: 60,
     locationId: "cuc",
     capacity: 4,
@@ -129,6 +129,12 @@ describe("MongoEventRepository", () => {
       })
     );
     await repo.create(buildEvent({ canonicalActivity: "coffee", isFull: true }));
+    await repo.create(
+      buildEvent({
+        canonicalActivity: "coffee",
+        startTime: new Date(now.getTime() - 10 * 60_000).toISOString(),
+      })
+    );
 
     const candidates = await repo.retrieveCandidates(
       { activityIds: ["coffee"], categoryIds: [], tags: [], locationIds: [] },
@@ -141,7 +147,7 @@ describe("MongoEventRepository", () => {
     expect(candidates.every((c) => c.status === "OPEN" && !c.isFull)).toBe(true);
   });
 
-  it("listOpen returns only OPEN, non-expired events", async () => {
+  it("listOpen returns only OPEN, unstarted, non-expired events", async () => {
     const repo = new MongoEventRepository();
     const now = new Date();
 
@@ -149,20 +155,47 @@ describe("MongoEventRepository", () => {
     const expired = await repo.create(
       buildEvent({ expiresAt: new Date(now.getTime() - HOUR_MS).toISOString() })
     );
+    const started = await repo.create(
+      buildEvent({
+        startTime: new Date(now.getTime() - 10 * 60_000).toISOString(),
+        endTime: new Date(now.getTime() + HOUR_MS).toISOString(),
+      })
+    );
 
     const results = await repo.listOpen(now, 50);
     const ids = results.map((e) => e.id);
     expect(ids).toContain(open.id);
     expect(ids).not.toContain(expired.id);
+    expect(ids).not.toContain(started.id);
   });
 
-  it("listForUser flushes expired and closed events from My Activities", async () => {
+  it("rejects joining after the event start time with EXPIRED", async () => {
+    const repo = new MongoEventRepository();
+    const now = new Date();
+    const created = await repo.create(
+      buildEvent({
+        startTime: new Date(now.getTime() - 60_000).toISOString(),
+        endTime: new Date(now.getTime() + HOUR_MS).toISOString(),
+        expiresAt: new Date(now.getTime() + HOUR_MS).toISOString(),
+        capacity: 5,
+        participantIds: [],
+        participantCount: 0,
+      })
+    );
+
+    const result = await repo.joinIfValid(created.id, "userA", now);
+    expect(result).toEqual({ ok: false, reason: "EXPIRED" });
+  });
+
+  it("listForUser keeps ended events for rating and hides cancelled ones", async () => {
     const repo = new MongoEventRepository();
     const now = new Date();
     const active = await repo.create(buildEvent({ participantIds: ["user-1"], participantCount: 1 }));
-    const expired = await repo.create(buildEvent({
+    const ended = await repo.create(buildEvent({
       participantIds: ["user-1"],
       participantCount: 1,
+      startTime: new Date(now.getTime() - 2 * HOUR_MS).toISOString(),
+      endTime: new Date(now.getTime() - HOUR_MS).toISOString(),
       expiresAt: new Date(now.getTime() - HOUR_MS).toISOString(),
     }));
     const cancelled = await repo.create(buildEvent({ participantIds: ["user-1"], status: "CANCELLED" }));
@@ -170,7 +203,7 @@ describe("MongoEventRepository", () => {
     const results = await repo.listForUser("user-1", now, 50);
     const ids = results.map((event) => event.id);
     expect(ids).toContain(active.id);
-    expect(ids).not.toContain(expired.id);
+    expect(ids).toContain(ended.id);
     expect(ids).not.toContain(cancelled.id);
   });
 });

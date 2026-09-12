@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import type { Student } from "shared-types";
 import { api } from "../api/client";
+import { RatingBadge } from "../components/StarRating";
 import { useSession } from "../state/session";
 
 /** Optional context PersonCard's "View Profile" passes via router state so
@@ -98,6 +99,7 @@ export default function PersonProfile() {
               <p className="truncate text-sm text-muted">
                 {profile.program} · {profile.year}
               </p>
+              <RatingBadge average={profile.ratingAverage} count={profile.ratingCount} />
             </div>
           </div>
 

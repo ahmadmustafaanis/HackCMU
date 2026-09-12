@@ -93,7 +93,13 @@ export default function Activities() {
             <ActivityFeedCard
               key={activity.id}
               activity={activity}
-              onClick={() => navigate(`/meetup/${activity.id}`)}
+              onClick={() =>
+                navigate(
+                  activity.canRate && !activity.hasRated
+                    ? `/feedback/${activity.id}`
+                    : `/meetup/${activity.id}`,
+                )
+              }
               isHost={activity.hostId === student?.id}
             />
           ))}
