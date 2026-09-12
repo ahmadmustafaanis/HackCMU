@@ -65,6 +65,10 @@ export interface Activity {
   type: string;
   description: string;
   approximateLocation: string;
+  /** Canonical campus location id from `locations.json`, when known. */
+  locationId?: string;
+  lat?: number;
+  lng?: number;
   timeLabel: string;
   walkingMinutes: number;
   attendees: string[];

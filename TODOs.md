@@ -92,6 +92,9 @@
   live (demo-login still works without it) — see `.env.example` for setup steps
 
 ## Stretch (only if time remains)
+- [x] Interactive dynamic campus heatmap on Discover + Home “Trending Around
+      CMU” (`feat/discover-heatmap`). Open events plot from `locations.json`
+      lat/lng now attached to `Activity`.
 - [ ] Set `GOOGLE_API_KEY`/`GEMINI_API_KEY` to exercise the real Gemini semantic-parsing
       path live (already verified live in this session — see conversation — this is just
       a reminder that it needs a valid key/model id to keep working)
