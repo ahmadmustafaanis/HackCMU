@@ -5,6 +5,39 @@ landed without reconstructing it from the diff.
 
 Newest entries go at the top. Keep each entry short: intent, files, follow-ups.
 
+## 2026-09-12 — Auth0 sign-in, route guards, and returning-user/logout fixes
+
+- Added Auth0 as a third real sign-in option alongside Google/Guest, using
+  `loginWithRedirect()` (not popup — auth0-react's popup path lacks the
+  double-invoke protection the redirect path has, which under React
+  StrictMode left the ID token uncached after a real login). New
+  `POST /api/auth/auth0` verifies the ID token against the tenant's JWKS,
+  mirroring the existing Google flow.
+- Every route except `/` and `/login` now requires a verified session
+  (`RequireAuth`), redirecting signed-out visitors to Welcome instead of
+  rendering with a null student.
+- Fixed two related bugs surfaced during manual testing: (1) all three
+  sign-in paths always routed to `/onboarding` regardless of whether the
+  account already had saved interests/vibes — now checked via
+  `hasCompletedOnboarding()`; (2) "Reset Demo" only cleared our own app
+  session, never Auth0's SSO cookie, so a later Auth0 sign-in could silently
+  re-authenticate — fixed by tracking which provider signed the user in
+  (`session.tsx`'s new `provider` field) rather than trusting
+  `useAuth0().isAuthenticated`, which resets across a full reload whenever
+  this tenant's silent re-auth check needs consent it can't get silently.
+- Files: `apps/api/src/auth/auth0Auth.ts`, `apps/api/src/routes/auth.route.ts`,
+  `apps/web/src/components/{Auth0SignInButton,RequireAuth}.tsx`,
+  `apps/web/src/lib/onboarding.ts`, `apps/web/src/state/session.tsx`,
+  `apps/web/src/pages/{Welcome,Login,Profile}.tsx`, `apps/web/src/main.tsx`,
+  `apps/web/src/App.tsx`.
+- Env vars: `AUTH0_DOMAIN`/`AUTH0_CLIENT_ID` (api) and
+  `VITE_AUTH0_DOMAIN`/`VITE_AUTH0_CLIENT_ID` (web) — see `.env.example` in
+  each app.
+- Follow-up: this Auth0 tenant doesn't skip user consent for first-party
+  apps, so every interactive Auth0 login re-shows the "Authorize App"
+  screen; toggle "Skip User Consent" in the Auth0 dashboard's Advanced
+  Settings if that's undesired for the demo.
+
 ## 2026-09-12 — Intent, location, activity lifecycle, and notifications
 
 - Removed the deprecated onboarding availability step; added deterministic

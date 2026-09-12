@@ -58,6 +58,7 @@ function post<TReq, TRes>(path: string, body: TReq): Promise<TRes> {
 export const api = {
   demoLogin: (body: DemoLoginRequest) => post<DemoLoginRequest, DemoLoginResponse>("/auth/demo-login", body),
   googleLogin: (idToken: string) => post<{ idToken: string }, DemoLoginResponse>("/auth/google", { idToken }),
+  auth0Login: (idToken: string) => post<{ idToken: string }, DemoLoginResponse>("/auth/auth0", { idToken }),
   /** Validates the current session token for real (not just "a value exists
    * in localStorage") and returns the current profile, or throws (401) if
    * the token is missing/invalid/expired. */

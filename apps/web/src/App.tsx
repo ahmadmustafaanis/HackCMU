@@ -1,4 +1,5 @@
 import { Navigate, Route, Routes } from "react-router-dom";
+import RequireAuth from "./components/RequireAuth";
 import ActivitySetup from "./pages/ActivitySetup";
 import Chat from "./pages/Chat";
 import Connections from "./pages/Connections";
@@ -22,21 +23,25 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Welcome />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/onboarding/*" element={<OnboardingWizard />} />
-        <Route path="/home" element={<Home />} />
-        <Route path="/activity/:type/setup" element={<ActivitySetup />} />
-        <Route path="/matching" element={<Matching />} />
-        <Route path="/matches" element={<MatchResults />} />
-        <Route path="/people/:id" element={<PersonProfile />} />
-        <Route path="/chat/:matchId" element={<Chat />} />
-        <Route path="/meetup/:eventId" element={<Meetup />} />
-        <Route path="/feedback/:eventId" element={<Feedback />} />
-        <Route path="/success/:matchId" element={<Success />} />
-        <Route path="/discover" element={<Navigate to="/activities" replace />} />
-        <Route path="/activities" element={<Discover />} />
-        <Route path="/connections" element={<Connections />} />
-        <Route path="/debug/database" element={<DebugDatabase />} />
-        <Route path="/profile" element={<Profile />} />
+
+        <Route element={<RequireAuth />}>
+          <Route path="/onboarding/*" element={<OnboardingWizard />} />
+          <Route path="/home" element={<Home />} />
+          <Route path="/activity/:type/setup" element={<ActivitySetup />} />
+          <Route path="/matching" element={<Matching />} />
+          <Route path="/matches" element={<MatchResults />} />
+          <Route path="/people/:id" element={<PersonProfile />} />
+          <Route path="/chat/:matchId" element={<Chat />} />
+          <Route path="/meetup/:eventId" element={<Meetup />} />
+          <Route path="/feedback/:eventId" element={<Feedback />} />
+          <Route path="/success/:matchId" element={<Success />} />
+          <Route path="/discover" element={<Navigate to="/activities" replace />} />
+          <Route path="/activities" element={<Discover />} />
+          <Route path="/connections" element={<Connections />} />
+          <Route path="/debug/database" element={<DebugDatabase />} />
+          <Route path="/profile" element={<Profile />} />
+        </Route>
+
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </div>

@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import Auth0SignInButton from "../components/Auth0SignInButton";
 import Button from "../components/Button";
 import Card from "../components/Card";
 import GoogleSignInButton from "../components/GoogleSignInButton";
 import { api } from "../api/client";
+import { hasCompletedOnboarding } from "../lib/onboarding";
 import { useSession } from "../state/session";
 
 /** Lightweight fallback screen at /login — the primary entry point is
@@ -20,8 +22,8 @@ export default function Login() {
     setError(null);
     try {
       const { student, sessionToken } = await api.googleLogin(idToken);
-      setSession(student, sessionToken);
-      navigate("/onboarding");
+      setSession(student, sessionToken, "google");
+      navigate(hasCompletedOnboarding(student) ? "/home" : "/onboarding");
     } catch {
       setError("Google sign-in failed. Please try again.");
     } finally {
@@ -34,8 +36,8 @@ export default function Login() {
     setError(null);
     try {
       const { student, sessionToken } = await api.demoLogin({});
-      setSession(student, sessionToken);
-      navigate("/onboarding");
+      setSession(student, sessionToken, "demo");
+      navigate(hasCompletedOnboarding(student) ? "/home" : "/onboarding");
     } catch {
       setError("Login failed. Please try again.");
     } finally {
@@ -53,6 +55,7 @@ export default function Login() {
         </div>
 
         <GoogleSignInButton onCredential={handleGoogleCredential} />
+        <Auth0SignInButton disabled={loading} />
 
         <div className="flex w-full items-center gap-3 text-xs text-muted">
           <span className="h-px flex-1 bg-line" />
