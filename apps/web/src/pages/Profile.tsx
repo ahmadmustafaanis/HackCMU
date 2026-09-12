@@ -1,3 +1,4 @@
+import { useAuth0 } from "@auth0/auth0-react";
 import { useNavigate } from "react-router-dom";
 import { useSession } from "../state/session";
 import TabBar from "../components/TabBar";
@@ -25,18 +26,24 @@ function ChipGroup({ title, items }: { title: string; items: string[] }) {
 }
 
 export default function Profile() {
-  const { student, clearSession } = useSession();
+  const { student, provider, clearSession } = useSession();
+  const { logout: auth0Logout } = useAuth0();
   const navigate = useNavigate();
 
   const handleReset = () => {
+    const wasAuth0 = provider === "auth0";
     clearSession();
-    navigate("/");
+    if (wasAuth0) {
+      auth0Logout({ logoutParams: { returnTo: window.location.origin } });
+    } else {
+      navigate("/");
+    }
   };
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden">
-      <div className="flex flex-1 flex-col gap-5 overflow-y-auto p-4">
-        <h1 className="text-xl font-semibold text-ink">Profile</h1>
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <div className="feed-scroll flex min-h-0 flex-1 flex-col gap-5 p-4">
+        <h1 className="font-display text-2xl font-medium text-ink">Profile</h1>
 
         {!student && (
           <p className="rounded-2xl border border-line bg-card p-4 text-center text-sm text-muted">
@@ -51,7 +58,7 @@ export default function Profile() {
                 {student.initials}
               </div>
               <div>
-                <p className="text-lg font-semibold text-ink">{student.name}</p>
+                <p className="font-display text-xl font-medium text-ink">{student.name}</p>
                 <p className="text-sm text-muted">
                   {student.program} · {student.year}
                 </p>
@@ -87,10 +94,10 @@ export default function Profile() {
           <button
             type="button"
             onClick={handleReset}
-            className="flex items-center gap-3 border-t border-line px-4 py-3 text-left text-sm font-medium text-primary"
+            className="pressable flex items-center gap-3 border-t border-line px-4 py-3 text-left text-sm font-medium text-primary hover:bg-primary/5"
           >
             <span className="text-base">↺</span>
-            <span className="flex-1">Reset Demo</span>
+            <span className="flex-1">Sign Out / Reset Demo</span>
           </button>
         </div>
       </div>

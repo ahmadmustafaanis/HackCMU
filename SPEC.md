@@ -70,10 +70,14 @@ marker; there is no CMU SSO or authorization layer in this implementation.
 
 ### 3.2 Home and activity selection
 
-`Home` is the primary signed-in surface. It uses the typed API client to load
-profile-derived activity suggestions and presents activity actions. The
-bottom-tab navigation reaches Home, Discover, Activities, Connections, and
-Profile.
+`Home` is the primary signed-in surface. It initially shows a compact free-text
+intent field and the trending feed. Focusing the field expands the draft
+controls for profile-derived activity buttons, time, and canonical location;
+the panel can be collapsed with Back or X without losing the draft. Selecting
+an activity triggers debounced read-only recommendations below the controls.
+Recommendation, trending, and Discover cards are clickable and open meetup
+details. The bottom-tab navigation reaches Home, Discover, Activities,
+Connections, and Profile.
 
 Selecting an activity opens `/activity/:type/setup`. The two-step setup screen
 collects:
@@ -308,9 +312,11 @@ function is pure given its injected taxonomy, time, and location collaborators.
 5. Candidates are scored, sorted descending, limited to the top 10, and cached
    for 15 seconds.
 
-`suggestActivities` currently returns one deterministic canonical activity per
-taxonomy category: workout, coding, drawing, studying, and coffee. This is a
-diverse placeholder for future profile-driven ranking.
+`suggestActivities` ranks preferred activities first, then activities whose
+taxonomy category matches profile interests, while selecting at most one
+activity per category. It falls back to workout, coding, drawing, studying, and
+coffee when the profile is unavailable. The result is deterministic and does
+not require an LLM.
 
 ### 7.7 Authoritative match path
 
@@ -391,6 +397,12 @@ LLM failure is non-fatal. Structured input, synonym hits, and cached text work
 without `GOOGLE_API_KEY`; novel free text falls back to structured fields and
 can produce a `PENDING` event rather than an error.
 
+`routes/debug.route.ts` exposes a read-only `/api/debug/database` snapshot in
+non-production environments. It includes bounded views of the users, events,
+matches, chat, feedback, connections, and idempotency collections. The web
+route `/debug/database` renders those collections as a simple development
+dashboard; production requests receive `404` from the API.
+
 ## 9. Configuration
 
 `apps/api/src/config/index.ts` loads and validates JSON configuration at
@@ -454,10 +466,59 @@ The following are deliberately outside this implementation:
 - production deployment configuration;
 - a real Gemini-key live-path check in the default demo;
 - a real Atlas connection-path test;
-- fully profile-driven activity suggestion ranking;
 - Discover filters and connection timestamps, which remain cosmetic or limited
   by the current `Match` contract.
+- Production authentication/authorization for the debug dashboard; the
+   dashboard is intentionally restricted to non-production environments.
 
 These boundaries are product constraints, not accidental omissions. Changes to
 the frozen shared contracts must update every importing workspace and all API
 callers together.
+
+## 13. Current Activity Experience
+
+Onboarding is intentionally two steps: interests and vibes. Availability is
+selected per activity rather than stored as a deprecated onboarding step.
+
+Home is the intent entry surface. Its focused draft can include free text,
+activity buttons, a relative/absolute time, and a canonical building. The map
+uses Leaflet/OpenStreetMap and browser geolocation when permission is granted.
+`apps/web/src/config/buildings.json` contains frontend building coordinates;
+the API `config/locations.json` contains authoritative IDs, names, aliases,
+and coordinates. The nearest building becomes selected, with CUC as fallback.
+Natural-language aliases such as `CUC`, `Hunt`, and `Gates` are resolved
+deterministically.
+
+The activity lifecycle is explicitly view-first:
+
+```text
+activity card -> event details -> Back OR Join activity -> My Activities
+```
+
+`GET /api/activities` remains the open-event feed for recommendations.
+`GET /api/activities/mine` returns events where the authenticated user is a
+participant. The duplicate Discover/Activities tab is replaced by **My
+Activities**; `/discover` redirects to `/activities`.
+
+Joining uses one atomic repository operation. On success, the member is added
+to the event and a durable `notifications` record is created for the host.
+`GET /api/notifications` exposes those records to the host, and the web app
+requests browser notification permission and displays the latest join event
+when supported. This is a provider-ready boundary rather than a claim of
+production Web Push delivery.
+
+All user-facing activity time labels display event start only. Synthetic
+activity generation emits `start_time` and `duration_minutes`; runtime event
+records retain end time for matching calculations.
+
+When no explicit time is supplied, matching defaults to a start time 30 minutes
+from the current time, then applies the configured activity duration for the
+end time. Relative time phrases in Home text are passed to the deterministic
+intent extractor before semantic parsing; a UI default timestamp does not
+override phrases such as `in 10 mins`.
+
+My Activities queries filter out events whose `expiresAt` has passed or whose
+status is closed/cancelled, so stale records are flushed from the user-facing
+list at read time. The development database dashboard is available at
+`/debug/database` after starting the local app and is backed by the read-only
+`/api/debug/database` endpoint.

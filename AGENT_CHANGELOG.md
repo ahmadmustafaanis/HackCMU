@@ -5,6 +5,15 @@ landed without reconstructing it from the diff.
 
 Newest entries go at the top. Keep each entry short: intent, files, follow-ups.
 
+## 2026-09-12 — Hybrid merge: Carnegie visual system + Auth0/matching/intent + integrated Home/Discover
+
+- Performed manual hybrid merge combining `origin/main` backend (Auth0 authentication, JWT verification, 2-question onboarding, matching algorithm and post-match event join logic, notifications, debug route, locations) with `yuxuan_changes_clean` visual language (Carnegie `#C41230` palette, stroke icon set in `Icons.tsx`, Newsreader + Source Sans 3 typography).
+- Replaced the components under Home's search bar with the Discover layout (when-filter chips, location pills, category segmented tabs, `CampusHeatmap`, and an interactive feed of `ActivityFeedCard`s with click-through to `/meetup/:id`).
+- Kept search bar & intent matching from main (free-text NLP extraction, location pills, time dropdown, activity button selection, live "Already happening" recommendations, and "Find people" matching action) styled with Carnegie tokens and stroke icons.
+- Retained Auth0 + Google + Guest login on Welcome and Login screens with `hasCompletedOnboarding()` checks, `RequireAuth` route guards, and provider-aware logout in `Profile.tsx`.
+- Files: `Home.tsx`, `Welcome.tsx`, `Login.tsx`, `Profile.tsx`, `OnboardingWizard.tsx`, `CampusHeatmap.tsx`, `ActivityButtonGrid.tsx`, `ActivityFeedCard.tsx`, `TrendingCard.tsx`, `TabBar.tsx`, `App.tsx`, `index.css`, `Icons.tsx`, `apps/api/`, `packages/shared-types/`.
+- Follow-up: test full end-to-end interactive flows with a running dev server.
+
 ## 2026-09-12 — Equal-length Home / Discover shells
 
 - Home always shows 8 activity tiles (suggestions first, then defaults) in a
@@ -41,6 +50,66 @@ Newest entries go at the top. Keep each entry short: intent, files, follow-ups.
   pressable controls; clicks scale 0.95 with shadow.
 - Files: `.cursor/skills/impeccable/`, `apps/web/src/index.css`, `CampusHeatmap.tsx`
 - Follow-up: `/impeccable init` still needed for PRODUCT.md.
+
+## 2026-09-12 — Auth0 sign-in, route guards, and returning-user/logout fixes
+
+- Added Auth0 as a third real sign-in option alongside Google/Guest, using
+  `loginWithRedirect()` (not popup — auth0-react's popup path lacks the
+  double-invoke protection the redirect path has, which under React
+  StrictMode left the ID token uncached after a real login). New
+  `POST /api/auth/auth0` verifies the ID token against the tenant's JWKS,
+  mirroring the existing Google flow.
+- Every route except `/` and `/login` now requires a verified session
+  (`RequireAuth`), redirecting signed-out visitors to Welcome instead of
+  rendering with a null student.
+- Fixed two related bugs surfaced during manual testing: (1) all three
+  sign-in paths always routed to `/onboarding` regardless of whether the
+  account already had saved interests/vibes — now checked via
+  `hasCompletedOnboarding()`; (2) "Reset Demo" only cleared our own app
+  session, never Auth0's SSO cookie, so a later Auth0 sign-in could silently
+  re-authenticate — fixed by tracking which provider signed the user in
+  (`session.tsx`'s new `provider` field) rather than trusting
+  `useAuth0().isAuthenticated`, which resets across a full reload whenever
+  this tenant's silent re-auth check needs consent it can't get silently.
+- Files: `apps/api/src/auth/auth0Auth.ts`, `apps/api/src/routes/auth.route.ts`,
+  `apps/web/src/components/{Auth0SignInButton,RequireAuth}.tsx`,
+  `apps/web/src/lib/onboarding.ts`, `apps/web/src/state/session.tsx`,
+  `apps/web/src/pages/{Welcome,Login,Profile}.tsx`, `apps/web/src/main.tsx`,
+  `apps/web/src/App.tsx`.
+- Env vars: `AUTH0_DOMAIN`/`AUTH0_CLIENT_ID` (api) and
+  `VITE_AUTH0_DOMAIN`/`VITE_AUTH0_CLIENT_ID` (web) — see `.env.example` in
+  each app.
+- Follow-up: this Auth0 tenant doesn't skip user consent for first-party
+  apps, so every interactive Auth0 login re-shows the "Authorize App"
+  screen; toggle "Skip User Consent" in the Auth0 dashboard's Advanced
+  Settings if that's undesired for the demo.
+
+## 2026-09-12 — Matched event results and activity freshness
+
+- Filtered expired/closed My Activities records, added now-plus-30-minute
+  defaults, and replaced person-centric match results with event details and
+  explicit join success state.
+- Fixed free-text relative-time precedence, tightened building alias matching,
+  requested Home geolocation on load, and removed capacity/spot copy in favor
+  of `N going`.
+- Files: matching availability/repository/routes, MatchResults/Home/heatmap,
+  shared API contracts, README.md, SPEC.md, and tests.
+- Follow-up: add browser-level coverage for permission-denied geolocation and
+  the matched-event join flow.
+
+## 2026-09-12 — Intent, location, activity lifecycle, and notifications
+
+- Removed the deprecated onboarding availability step; added deterministic
+  extraction for relative times and building aliases, including
+  `treadmill in 10 mins at CUC`.
+- Added configurable building coordinates, nearest-building map selection,
+  explicit view-versus-join details, My Activities, start-only labels, durable
+  host notifications, and synthetic start-time generation.
+- Files: matching intent/config/routes, notifications, Home/Meetup/Discover/
+  CampusHeatmap, shared API contracts, `README.md`, `SPEC.md`, and
+  `match_spec.md`.
+- Follow-up: replace browser polling with a production Web Push provider and
+  add browser tests for geolocation permission flows.
 
 ## 2026-09-12 — Real OpenStreetMap under the campus heatmap
 

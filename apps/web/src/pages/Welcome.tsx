@@ -1,25 +1,25 @@
-import { useEffect, useState } from "react";
+import { useAuth0 } from "@auth0/auth0-react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import Auth0SignInButton from "../components/Auth0SignInButton";
 import Button from "../components/Button";
-import { PawMark } from "../components/Icons";
 import GoogleSignInButton from "../components/GoogleSignInButton";
+import { PawMark } from "../components/Icons";
 import { api } from "../api/client";
+import { hasCompletedOnboarding } from "../lib/onboarding";
 import { useSession } from "../state/session";
 
 export default function Welcome() {
   const navigate = useNavigate();
   const { student, restoring, setSession } = useSession();
+  const { isAuthenticated: auth0Authenticated, isLoading: auth0Loading, error: auth0Error, getIdTokenClaims } = useAuth0();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Already signed in (session restored + verified on load) — skip straight
   // to Home instead of showing the welcome screen again. Deliberately keyed
   // ONLY on `restoring` (not `student`): this must fire exactly once, right
-  // when restoration finishes, to redirect a RETURNING visitor. If it also
-  // re-ran on every `student` change, it would race a fresh interactive
-  // sign-in's own `navigate("/onboarding")` below (setSession's state update
-  // and that navigate can land in the same render pass) and incorrectly
-  // skip onboarding for brand-new sign-ins too.
+  // when restoration finishes, to redirect a RETURNING visitor.
   useEffect(() => {
     if (!restoring && student) navigate("/home", { replace: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -30,8 +30,8 @@ export default function Welcome() {
     setError(null);
     try {
       const { student: signedInStudent, sessionToken } = await api.googleLogin(idToken);
-      setSession(signedInStudent, sessionToken);
-      navigate("/onboarding");
+      setSession(signedInStudent, sessionToken, "google");
+      navigate(hasCompletedOnboarding(signedInStudent) ? "/home" : "/onboarding");
     } catch {
       setError("Google sign-in failed. Please try again.");
     } finally {
@@ -39,13 +39,39 @@ export default function Welcome() {
     }
   };
 
+  useEffect(() => {
+    if (auth0Error) setError("Auth0 sign-in failed. Please try again.");
+  }, [auth0Error]);
+
+  const exchangeStarted = useRef(false);
+  useEffect(() => {
+    if (auth0Loading || !auth0Authenticated || student || exchangeStarted.current) return;
+    exchangeStarted.current = true;
+    (async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const claims = await getIdTokenClaims();
+        if (!claims?.__raw) throw new Error("Auth0 did not return an ID token");
+        const { student: signedInStudent, sessionToken } = await api.auth0Login(claims.__raw);
+        setSession(signedInStudent, sessionToken, "auth0");
+        navigate(hasCompletedOnboarding(signedInStudent) ? "/home" : "/onboarding");
+      } catch {
+        setError("Auth0 sign-in failed. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [auth0Loading, auth0Authenticated, student]);
+
   const handleGuestContinue = async () => {
     setLoading(true);
     setError(null);
     try {
       const { student: guestStudent, sessionToken } = await api.demoLogin({});
-      setSession(guestStudent, sessionToken);
-      navigate("/onboarding");
+      setSession(guestStudent, sessionToken, "demo");
+      navigate(hasCompletedOnboarding(guestStudent) ? "/home" : "/onboarding");
     } catch {
       setError("Couldn't reach the server. Please try again.");
     } finally {
@@ -77,6 +103,7 @@ export default function Welcome() {
 
       <div className="flex w-full flex-col items-center gap-4">
         <GoogleSignInButton onCredential={handleGoogleCredential} />
+        <Auth0SignInButton disabled={loading} />
 
         <div className="flex w-full items-center gap-3 text-xs text-muted">
           <span className="h-px flex-1 bg-line" />

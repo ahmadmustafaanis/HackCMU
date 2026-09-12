@@ -1,9 +1,24 @@
-import type { CacheService, EventRepository, NormalizedIntent, RecommendationService, ScoredCandidate } from "shared-types";
-import { thresholds } from "../config/index.js";
+import type { CacheService, EventRepository, NormalizedIntent, RecommendationService, ScoredCandidate, UserProfileService } from "shared-types";
+import { taxonomy, thresholds } from "../config/index.js";
 import type { InMemoryMetricsService } from "./observability/metricsService.js";
 import { scoreCandidate, type ScoringCollaborators } from "./scoring/scoreCandidate.js";
 
 const TOP_N = 10;
+const FALLBACK_ACTIVITIES = ["workout", "coding", "drawing", "studying", "coffee"];
+const INTEREST_CATEGORIES: Record<string, string[]> = {
+  Sports: ["fitness"],
+  Fitness: ["fitness"],
+  Coding: ["coding"],
+  AI: ["coding"],
+  Research: ["study"],
+  Books: ["study"],
+  Art: ["art"],
+  Photography: ["art"],
+  Coffee: ["social"],
+  Food: ["social"],
+  Gaming: ["social"],
+  Music: ["social"],
+};
 
 /** Coarse, bucketed cache key so near-simultaneous identical requests share
  * a cache entry. Deliberately duplicated here (not imported) from the cache
@@ -15,7 +30,7 @@ function buildCacheKey(intent: NormalizedIntent, now: Date): string {
   const activity = [...intent.activityIds].sort().join(",");
   const location = [...intent.locationIds].sort().join(",");
   const tags = [...intent.tags].sort().join(",");
-  return `rec:${activity}|${location}|${tags}|${bucket}`;
+  return `rec:${activity}|${location}|${tags}|${intent.startTime ?? ""}|${intent.endTime ?? ""}|${bucket}`;
 }
 
 /**
@@ -36,7 +51,8 @@ export class DefaultRecommendationService implements RecommendationService {
       InMemoryMetricsService,
       "recordRecommendationCacheHit" | "recordCandidateCount" | "recordRecommendationLatency"
     >,
-    private readonly maxCandidates: number = thresholds.maxCandidates
+    private readonly maxCandidates: number = thresholds.maxCandidates,
+    private readonly userProfileService?: UserProfileService
   ) {}
 
   async recommend(intent: NormalizedIntent, now: Date = new Date()): Promise<ScoredCandidate[]> {
@@ -68,11 +84,30 @@ export class DefaultRecommendationService implements RecommendationService {
     return scored;
   }
 
-  async suggestActivities(_userId: string, _now: Date = new Date()): Promise<string[]> {
-    // Deterministic placeholder: one canonical activity per taxonomy
-    // category (fitness/coding/art/study/social), so the diversity cap is
-    // satisfied by construction. A real profile-driven ranking can replace
-    // this body later without touching the RecommendationService interface.
-    return ["workout", "coding", "drawing", "studying", "coffee"];
+  async suggestActivities(userId: string, _now: Date = new Date()): Promise<string[]> {
+    if (!this.userProfileService) return FALLBACK_ACTIVITIES;
+
+    const profile = await this.userProfileService.getProfile(userId).catch(() => null);
+    if (!profile) return FALLBACK_ACTIVITIES;
+
+    const preferred = new Set(profile.preferredActivities);
+    const interestCategories = new Set(profile.interests.flatMap((interest) => INTEREST_CATEGORIES[interest] ?? []));
+    const ranked = Object.entries(taxonomy)
+      .map(([id, node], index) => ({
+        id,
+        category: node.category,
+        score: (preferred.has(id) ? 100 : 0) + (interestCategories.has(node.category) ? 10 : 0),
+        index,
+      }))
+      .sort((a, b) => b.score - a.score || a.index - b.index);
+
+    const selected: string[] = [];
+    const categories = new Set<string>();
+    for (const activity of ranked) {
+      if (categories.has(activity.category)) continue;
+      selected.push(activity.id);
+      categories.add(activity.category);
+    }
+    return selected.length > 0 ? selected : FALLBACK_ACTIVITIES;
   }
 }

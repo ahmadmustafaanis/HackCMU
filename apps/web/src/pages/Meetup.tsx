@@ -4,8 +4,6 @@ import type { Activity, Student } from "shared-types";
 import { api } from "../api/client";
 import { useSession } from "../state/session";
 
-type MeetupStatus = "pending" | "on_the_way" | "arrived";
-
 function matchIdStorageKey(eventId: string) {
   return `scottys-circle:matchId:${eventId}`;
 }
@@ -19,7 +17,8 @@ export default function Meetup() {
   const [match, setMatch] = useState<Student | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [status, setStatus] = useState<MeetupStatus>("pending");
+  const [joining, setJoining] = useState(false);
+  const [joinMessage, setJoinMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (!eventId) return;
@@ -61,21 +60,25 @@ export default function Meetup() {
     };
   }, [eventId, student?.id]);
 
-  const goToFeedback = () => {
+  const joinActivity = async () => {
     if (!eventId) return;
-    navigate(`/feedback/${eventId}`);
+    setJoining(true);
+    setJoinMessage(null);
+    try {
+      const response = await api.joinEvent(eventId);
+      if (response.status === "accepted") navigate("/activities");
+      else setJoinMessage(response.status === "full" ? "This activity is full." : "This activity is no longer available.");
+    } catch {
+      setJoinMessage("Could not join this activity right now.");
+    } finally {
+      setJoining(false);
+    }
   };
-
-  const cancelMeetup = () => {
-    navigate("/home");
-  };
-
-  const displayName = match?.name ?? "your match";
 
   return (
     <div className="flex flex-1 flex-col gap-5 overflow-y-auto p-5">
-      <div className="pt-2 text-center">
-        <p className="text-sm font-medium text-muted">Meetup in progress</p>
+      <div className="pt-2">
+        <button type="button" onClick={() => navigate(-1)} className="text-sm font-medium text-muted">← Back</button>
       </div>
 
       <div className="flex flex-col items-center gap-3 rounded-3xl border border-line bg-card p-6 text-center shadow-sm">
@@ -86,7 +89,7 @@ export default function Meetup() {
         {loading ? (
           <p className="text-sm text-muted">Loading your meetup…</p>
         ) : (
-          <h1 className="text-xl font-semibold text-ink">You're meeting {displayName}!</h1>
+          <h1 className="text-xl font-semibold text-ink">{activity?.title ?? "Activity details"}</h1>
         )}
 
         {activity && (
@@ -99,51 +102,18 @@ export default function Meetup() {
         </div>
 
         {loadError && <p className="text-xs text-primary">{loadError}</p>}
+        {joinMessage && <p className="text-xs text-primary">{joinMessage}</p>}
       </div>
-
-      <div className="rounded-3xl border border-line bg-card p-5 shadow-sm">
-        <p className="mb-3 text-center text-sm font-medium text-muted">
-          {status === "pending" && "Let them know where you're at"}
-          {status === "on_the_way" && "🚶 You're on your way"}
-          {status === "arrived" && "📍 You've arrived"}
-        </p>
-        <div className="flex gap-3">
-          <button
-            type="button"
-            onClick={() => setStatus("on_the_way")}
-            className={`flex-1 rounded-2xl border py-3 text-sm font-semibold transition ${
-              status === "on_the_way"
-                ? "border-primary bg-primary text-white"
-                : "border-line bg-surface text-ink hover:border-primary-light"
-            }`}
-          >
-            I'm On My Way
-          </button>
-          <button
-            type="button"
-            onClick={() => setStatus("arrived")}
-            className={`flex-1 rounded-2xl border py-3 text-sm font-semibold transition ${
-              status === "arrived"
-                ? "border-primary bg-primary text-white"
-                : "border-line bg-surface text-ink hover:border-primary-light"
-            }`}
-          >
-            I'm Here
-          </button>
-        </div>
-      </div>
-
       <div className="mt-auto flex flex-col gap-3 pb-2">
         <button
           type="button"
-          onClick={goToFeedback}
-          className="w-full rounded-2xl bg-primary py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-dark"
+          onClick={joinActivity}
+          disabled={joining || loading || !activity}
+          className="w-full rounded-2xl bg-primary py-3 text-sm font-semibold text-white shadow-sm disabled:opacity-50"
         >
-          Wrap Up &amp; Leave Feedback
+          {joining ? "Joining…" : "Join activity"}
         </button>
-        <button type="button" onClick={cancelMeetup} className="text-center text-sm font-medium text-muted underline-offset-2 hover:text-primary hover:underline">
-          Cancel meetup
-        </button>
+        <button type="button" onClick={() => navigate(-1)} className="text-center text-sm font-medium text-muted underline-offset-2 hover:text-primary hover:underline">Back</button>
       </div>
     </div>
   );

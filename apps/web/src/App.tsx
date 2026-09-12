@@ -1,7 +1,9 @@
 import { Navigate, Route, Routes } from "react-router-dom";
+import RequireAuth from "./components/RequireAuth";
 import ActivitySetup from "./pages/ActivitySetup";
 import Chat from "./pages/Chat";
 import Connections from "./pages/Connections";
+import DebugDatabase from "./pages/DebugDatabase";
 import Discover from "./pages/Discover";
 import Feedback from "./pages/Feedback";
 import Home from "./pages/Home";
@@ -26,23 +28,29 @@ export default function App() {
       </a>
       <main id="main-content" className="flex min-h-0 flex-1 flex-col">
         <Routes>
-        <Route path="/" element={<Welcome />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/onboarding/*" element={<OnboardingWizard />} />
-        <Route path="/home" element={<Home />} />
-        <Route path="/activity/:type/setup" element={<ActivitySetup />} />
-        <Route path="/matching" element={<Matching />} />
-        <Route path="/matches" element={<MatchResults />} />
-        <Route path="/people/:id" element={<PersonProfile />} />
-        <Route path="/chat/:matchId" element={<Chat />} />
-        <Route path="/meetup/:eventId" element={<Meetup />} />
-        <Route path="/feedback/:eventId" element={<Feedback />} />
-        <Route path="/success/:matchId" element={<Success />} />
-        <Route path="/discover" element={<Discover />} />
-        <Route path="/connections" element={<Connections />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+          <Route path="/" element={<Welcome />} />
+          <Route path="/login" element={<Login />} />
+
+          <Route element={<RequireAuth />}>
+            <Route path="/onboarding/*" element={<OnboardingWizard />} />
+            <Route path="/home" element={<Home />} />
+            <Route path="/activity/:type/setup" element={<ActivitySetup />} />
+            <Route path="/matching" element={<Matching />} />
+            <Route path="/matches" element={<MatchResults />} />
+            <Route path="/people/:id" element={<PersonProfile />} />
+            <Route path="/chat/:matchId" element={<Chat />} />
+            <Route path="/meetup/:eventId" element={<Meetup />} />
+            <Route path="/feedback/:eventId" element={<Feedback />} />
+            <Route path="/success/:matchId" element={<Success />} />
+            <Route path="/discover" element={<Discover />} />
+            <Route path="/activities" element={<Discover />} />
+            <Route path="/connections" element={<Connections />} />
+            <Route path="/debug/database" element={<DebugDatabase />} />
+            <Route path="/profile" element={<Profile />} />
+          </Route>
+
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
       </main>
     </div>
   );

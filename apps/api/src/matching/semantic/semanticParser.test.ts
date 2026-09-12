@@ -60,6 +60,18 @@ describe("SemanticParser", () => {
     expect(llm.callCount).toBe(0);
   });
 
+  it("resolves an activity mentioned inside a time/location phrase without an LLM", async () => {
+    const llm = new FakeLlmClient(async () => {
+      throw new Error("LLM should not be called for a phrase containing a known activity");
+    });
+    const parser = new SemanticParser(llm, new FakeCache());
+
+    await expect(parser.parse("treadmill in 10 mins at CUC")).resolves.toMatchObject({
+      canonicalActivity: "treadmill",
+      category: "fitness",
+    });
+  });
+
   it("resolves a canonical activity id spelled with noisy casing/punctuation without touching the LLM", async () => {
     const llm = new FakeLlmClient(async () => {
       throw new Error("LLM should not be called for a known canonical id");

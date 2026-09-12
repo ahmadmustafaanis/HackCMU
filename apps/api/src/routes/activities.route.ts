@@ -8,12 +8,15 @@ import type {
   EventStatus,
   InviteRequest,
   InviteResponse,
+  JoinEventRequest,
+  JoinEventResponse,
   RecommendationService,
   SuggestionsResponse,
 } from "shared-types";
 import { requireAuth } from "../auth/requireAuth.js";
 import { locations } from "../config/index.js";
 import { getMatchById, updateMatchStatus } from "../matches/matchesService.js";
+import { notifyEventHost } from "../notifications/notificationService.js";
 
 function locationById(locationId: string) {
   return locations.find((l) => l.id === locationId);
@@ -32,7 +35,8 @@ function formatTimeLabel(startIso: string, endIso: string): string {
     const period = hours24 < 12 ? "AM" : "PM";
     return `${hours12}:${minutes} ${period}`;
   };
-  return `${format(startIso)} – ${format(endIso)}`;
+  void endIso;
+  return format(startIso);
 }
 
 function capitalize(text: string): string {
@@ -110,6 +114,35 @@ export function createActivitiesRouter(deps: {
     }
   });
 
+  router.get("/mine", requireAuth, async (req, res, next) => {
+    try {
+      const events = await deps.eventRepository.listForUser(req.userId!, new Date(), 100);
+      const response: ActivitiesResponse = { activities: events.map(toActivity) };
+      res.json(response);
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  router.post("/:eventId/join", requireAuth, async (req, res, next) => {
+    try {
+      const body = req.body as JoinEventRequest;
+      const eventId = req.params.eventId || body.eventId;
+      const result = await deps.eventRepository.joinIfValid(eventId, req.userId!, new Date());
+      if (!result.ok) {
+        const status: JoinEventResponse["status"] = result.reason === "ALREADY_JOINED" ? "accepted" : result.reason === "FULL" ? "full" : result.reason === "EXPIRED" ? "expired" : result.reason === "NOT_FOUND" ? "not_found" : "expired";
+        res.json({ status } satisfies JoinEventResponse);
+        return;
+      }
+      if (result.event.hostId !== req.userId!) {
+        await notifyEventHost({ hostId: result.event.hostId, eventId: result.event.id, actorId: req.userId! });
+      }
+      res.json({ status: "accepted", activity: toActivity(result.event) } satisfies JoinEventResponse);
+    } catch (err) {
+      next(err);
+    }
+  });
+
   // GET /api/activities/suggestions?userId=... — requireAuth; the `userId`
   // query param is accepted for backward compatibility but ignored in favor
   // of the verified session, so you can't fetch personalization data keyed
@@ -118,6 +151,20 @@ export function createActivitiesRouter(deps: {
     try {
       const activityIds = await deps.recommendationService.suggestActivities(req.userId!);
       const response: SuggestionsResponse = { activityIds };
+      res.json(response);
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  router.get("/:eventId", async (req, res, next) => {
+    try {
+      const event = await deps.eventRepository.getById(req.params.eventId);
+      if (!event) {
+        res.status(404).json({ error: "activity not found" });
+        return;
+      }
+      const response: { activity: Activity } = { activity: toActivity(event) };
       res.json(response);
     } catch (err) {
       next(err);

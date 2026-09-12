@@ -1,13 +1,16 @@
 import type {
   ActivitiesResponse,
+  ActivityResponse,
   ChatHistoryResponse,
   ConnectionsResponse,
+  DebugDatabaseResponse,
   DemoLoginRequest,
   DemoLoginResponse,
   FeedbackRequest,
   FeedbackResponse,
   InviteRequest,
   InviteResponse,
+  JoinEventResponse,
   MatchRequest,
   MatchResponse,
   MatchesResponse,
@@ -19,6 +22,7 @@ import type {
   SendMessageRequest,
   SendMessageResponse,
   SuggestionsResponse,
+  NotificationsResponse,
 } from "shared-types";
 
 const BASE = "/api";
@@ -55,6 +59,7 @@ function post<TReq, TRes>(path: string, body: TReq): Promise<TRes> {
 export const api = {
   demoLogin: (body: DemoLoginRequest) => post<DemoLoginRequest, DemoLoginResponse>("/auth/demo-login", body),
   googleLogin: (idToken: string) => post<{ idToken: string }, DemoLoginResponse>("/auth/google", { idToken }),
+  auth0Login: (idToken: string) => post<{ idToken: string }, DemoLoginResponse>("/auth/auth0", { idToken }),
   /** Validates the current session token for real (not just "a value exists
    * in localStorage") and returns the current profile, or throws (401) if
    * the token is missing/invalid/expired. */
@@ -65,6 +70,9 @@ export const api = {
   recommend: (body: RecommendRequest) => post<RecommendRequest, RecommendResponse>("/recommend", body),
   match: (body: MatchRequest) => post<MatchRequest, MatchResponse>("/match", body),
   getActivities: () => request<ActivitiesResponse>("/activities"),
+  getActivity: (eventId: string) => request<ActivityResponse>(`/activities/${eventId}`),
+  getMyActivities: () => request<ActivitiesResponse>("/activities/mine"),
+  joinEvent: (eventId: string) => post<{ eventId: string }, JoinEventResponse>(`/activities/${eventId}/join`, { eventId }),
   invite: (eventId: string, body: InviteRequest) => post<InviteRequest, InviteResponse>(`/activities/${eventId}/invite`, body),
   getMatches: (userId: string) => request<MatchesResponse>(`/matches/${userId}`),
   getChatHistory: (conversationId: string) => request<ChatHistoryResponse>(`/chat/${conversationId}`),
@@ -72,4 +80,6 @@ export const api = {
     post<SendMessageRequest, SendMessageResponse>(`/chat/${conversationId}`, body),
   submitFeedback: (body: FeedbackRequest) => post<FeedbackRequest, FeedbackResponse>("/feedback", body),
   getConnections: (userId: string) => request<ConnectionsResponse>(`/connections/${userId}`),
+  getDebugDatabase: () => request<DebugDatabaseResponse>("/debug/database"),
+  getNotifications: () => request<NotificationsResponse>("/notifications"),
 };

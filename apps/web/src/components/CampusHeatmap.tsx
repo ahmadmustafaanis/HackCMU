@@ -13,7 +13,7 @@ interface Hotspot {
   people: number;
 }
 
-interface Coords {
+export interface Coords {
   lat: number;
   lng: number;
 }
@@ -23,6 +23,8 @@ interface CampusHeatmapProps {
   selectedLocationId?: string;
   onSelectLocation?: (locationId: string | null) => void;
   compact?: boolean;
+  onUserLocation?: (coords: Coords) => void;
+  requestLocationOnMount?: boolean;
 }
 
 const CMU_CENTER: [number, number] = [40.4432, -79.9435];
@@ -112,6 +114,8 @@ export default function CampusHeatmap({
   selectedLocationId = "all",
   onSelectLocation,
   compact = false,
+  onUserLocation,
+  requestLocationOnMount = false,
 }: CampusHeatmapProps) {
   const mapRef = useRef<L.Map | null>(null);
   const [hovered, setHovered] = useState<string | null>(null);
@@ -161,6 +165,7 @@ export default function CampusHeatmap({
       (pos) => {
         const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
         setMe(coords);
+        onUserLocation?.(coords);
         setGeoStatus("ok");
         mapRef.current?.flyTo([coords.lat, coords.lng], 17, { duration: 0.5 });
       },
@@ -168,6 +173,11 @@ export default function CampusHeatmap({
       { enableHighAccuracy: true, timeout: 8000, maximumAge: 15000 },
     );
   };
+
+  useEffect(() => {
+    if (requestLocationOnMount) locateMe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [requestLocationOnMount]);
 
   const activeId = hovered ?? (selectedLocationId !== "all" ? selectedLocationId : null);
   const active = spots.find((s) => s.locationId === activeId);
@@ -196,7 +206,7 @@ export default function CampusHeatmap({
                 center={[spot.lat, spot.lng]}
                 radius={selected ? 11 : 8}
                 pathOptions={{
-                  color: selected ? "#201a1c" : "#ffffff",
+                  color: selected ? "#1c1214" : "#ffffff",
                   weight: selected ? 3 : 2,
                   fillColor: colorForIntensity(t),
                   fillOpacity: 0.95,
