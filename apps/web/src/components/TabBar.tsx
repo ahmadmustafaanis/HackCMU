@@ -1,11 +1,13 @@
 import { NavLink } from "react-router-dom";
+import { BoltIcon, CompassIcon, HomeIcon, PeopleIcon, UserIcon } from "./Icons";
 
 const TABS = [
-  { to: "/home", label: "Home", icon: "🏠" },
-  { to: "/activities", label: "My Activities", icon: "⚡" },
-  { to: "/connections", label: "Connections", icon: "👥" },
-  { to: "/profile", label: "Profile", icon: "👤" },
-];
+  { to: "/home", label: "Home", Icon: HomeIcon, end: true },
+  { to: "/discover", label: "Discover", Icon: CompassIcon, end: false },
+  { to: "/matches", label: "Activities", Icon: BoltIcon, end: false },
+  { to: "/connections", label: "Connections", Icon: PeopleIcon, end: false },
+  { to: "/profile", label: "Profile", Icon: UserIcon, end: false },
+] as const;
 
 export default function TabBar() {
   return (
@@ -14,9 +16,9 @@ export default function TabBar() {
         <NavLink
           key={tab.label}
           to={tab.to}
-          end={tab.to === "/home"}
+          end={tab.end}
           className={({ isActive }) =>
-            `flex flex-1 flex-col items-center gap-0.5 rounded-xl px-1 py-1.5 text-[11px] font-medium transition-colors ${
+            `pressable flex flex-1 flex-col items-center gap-0.5 rounded-xl px-1 py-1.5 text-[11px] font-medium ${
               isActive ? "text-primary" : "text-muted hover:text-ink"
             }`
           }
@@ -24,11 +26,11 @@ export default function TabBar() {
           {({ isActive }) => (
             <>
               <span
-                className={`flex h-8 w-8 items-center justify-center rounded-full text-base leading-none transition-colors ${
-                  isActive ? "bg-primary/10" : ""
+                className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors duration-200 ${
+                  isActive ? "bg-primary text-white" : ""
                 }`}
               >
-                {tab.icon}
+                <tab.Icon className="h-5 w-5" />
               </span>
               {tab.label}
             </>

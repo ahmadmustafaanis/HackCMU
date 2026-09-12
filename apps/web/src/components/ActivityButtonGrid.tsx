@@ -1,13 +1,6 @@
-/** Shared activity metadata + the Home screen's button grid.
- *
- * Exported so both Home.tsx (grid + trending) and ActivitySetup.tsx (step-1
- * heading) can agree on the same slug ↔ canonical-activity-id ↔ display
- * mapping without a third file. `type` is the URL-safe slug used in the
- * `/activity/:type/setup` route; `canonicalId` is what actually gets sent
- * to the backend as `intent.activityIds[0]` — the two differ for a couple
- * of entries so the route reads naturally ("gym") while the id sent to the
- * matching pipeline stays taxonomy-aligned ("workout").
- */
+import { ACTIVITY_ICONS, SparkIcon } from "./Icons";
+
+/** Shared activity metadata + the Home screen's button grid. */
 
 export interface ActivityMeta {
   type: string;
@@ -57,25 +50,59 @@ export function metaForCanonicalId(id: string): ActivityMeta {
   return BY_CANONICAL_ID.get(id) ?? genericMeta(id);
 }
 
+const HOME_GRID_SIZE = 8;
+
+/** Always 8 tiles: suggested ids first, then the curated defaults. */
+export function fillHomeActivities(preferredIds: string[]): ActivityMeta[] {
+  const out: ActivityMeta[] = [];
+  const seen = new Set<string>();
+
+  const push = (meta: ActivityMeta) => {
+    if (seen.has(meta.type) || seen.has(meta.canonicalId)) return;
+    seen.add(meta.type);
+    seen.add(meta.canonicalId);
+    out.push(meta);
+  };
+
+  for (const id of preferredIds) {
+    push(metaForCanonicalId(id));
+    if (out.length === HOME_GRID_SIZE) return out;
+  }
+  for (const activity of DEFAULT_ACTIVITIES) {
+    push(activity);
+    if (out.length === HOME_GRID_SIZE) return out;
+  }
+  return out;
+}
+
 interface ActivityButtonGridProps {
   activities: ActivityMeta[];
+  selectedId?: string;
   onSelect: (activity: ActivityMeta) => void;
 }
 
-export default function ActivityButtonGrid({ activities, onSelect }: ActivityButtonGridProps) {
+export default function ActivityButtonGrid({ activities, selectedId, onSelect }: ActivityButtonGridProps) {
   return (
     <div className="grid grid-cols-4 gap-3">
-      {activities.map((activity) => (
-        <button
-          key={activity.type}
-          type="button"
-          onClick={() => onSelect(activity)}
-          className="flex flex-col items-center gap-1.5 rounded-2xl border border-line bg-card px-2 py-3 text-center shadow-sm transition active:scale-95 active:bg-surface"
-        >
-          <span className="text-2xl leading-none">{activity.icon}</span>
-          <span className="text-[11px] font-medium leading-tight text-ink">{activity.label}</span>
-        </button>
-      ))}
+      {activities.map((activity) => {
+        const Glyph = ACTIVITY_ICONS[activity.type];
+        const isSelected = selectedId === activity.canonicalId || selectedId === activity.type;
+        return (
+          <button
+            key={activity.type}
+            type="button"
+            onClick={() => onSelect(activity)}
+            className={`pressable flex flex-col items-center gap-1.5 rounded-[14px] border px-2 py-3 text-center transition ${
+              isSelected
+                ? "border-primary bg-primary/10 text-primary ring-2 ring-primary/20"
+                : "border-line bg-card hover:border-primary hover:text-primary"
+            }`}
+          >
+            {Glyph ? <Glyph className="h-6 w-6 text-primary" /> : <SparkIcon className="h-6 w-6 text-primary" />}
+            <span className="text-[11px] font-medium leading-tight text-ink">{activity.label}</span>
+          </button>
+        );
+      })}
     </div>
   );
 }

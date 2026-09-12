@@ -1,22 +1,53 @@
+@import url("https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,650&family=Source+Sans+3:ital,wght@0,400;0,500;0,600;0,700&display=swap");
 @import "tailwindcss";
 @import "leaflet/dist/leaflet.css";
 
 @theme {
-  --color-primary: #7a2338;
-  --color-primary-dark: #5e1a2a;
-  --color-primary-light: #a83b52;
-  --color-surface: #faf7f5;
-  --color-card: #ffffff;
-  --color-ink: #201a1c;
-  --color-muted: #8a7f82;
-  --color-line: #ede6e7;
-  --font-sans: system-ui, "Segoe UI", Roboto, sans-serif;
+  --color-primary: #c41230;
+  --color-primary-dark: #9a0e26;
+  --color-primary-light: #e23a4f;
+  --color-surface: #f4f0ee;
+  --color-card: #fffbfa;
+  --color-ink: #1c1214;
+  --color-muted: #5a4348;
+  --color-line: #e4d4d6;
+  --font-sans: "Source Sans 3", "Segoe UI", sans-serif;
+  --font-display: "Newsreader", Georgia, serif;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 :root {
   color-scheme: light;
-  font: 16px/145% var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  caret-color: var(--color-primary);
+}
+
+html,
+body,
+button,
+input,
+textarea,
+select,
+.leaflet-container,
+.leaflet-control {
+  font-family: "Source Sans 3", "Segoe UI", sans-serif;
+}
+
+html {
+  font-size: 16px;
+  line-height: 1.5;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: color-mix(in srgb, var(--color-primary) 18%, transparent);
+}
+
+::selection {
+  background: color-mix(in srgb, var(--color-primary) 22%, white);
+  color: var(--color-ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 3px;
 }
 
 body {
@@ -25,41 +56,173 @@ body {
   color: var(--color-ink);
 }
 
+h1,
+h2,
+h3,
+.font-display {
+  font-family: "Newsreader", Georgia, serif;
+  font-optical-sizing: auto;
+  letter-spacing: -0.03em;
+  font-weight: 500;
+  text-wrap: pretty;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
 #root {
   min-height: 100svh;
   display: flex;
   justify-content: center;
 }
 
-/* The mobile "phone frame" container: fills the viewport on an actual
-   phone, centers as a fixed-width card on a wider (desktop/demo) screen. */
 .app-shell {
   width: 100%;
   max-width: 430px;
-  min-height: 100svh;
+  height: 100svh;
+  max-height: 100svh;
   background: var(--color-surface);
   display: flex;
   flex-direction: column;
   position: relative;
+  overflow: hidden;
 }
 
 @media (min-width: 431px) {
   .app-shell {
-    min-height: 90svh;
+    height: 90svh;
+    max-height: 90svh;
     margin: 5svh 0;
     border-radius: 28px;
-    box-shadow: 0 20px 60px -20px rgba(32, 26, 28, 0.35);
-    overflow: hidden;
+    box-shadow: 0 18px 40px -18px rgb(28 18 20 / 0.35);
+  }
+}
+
+.feed-scroll {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--color-primary) 35%, var(--color-line)) transparent;
+}
+
+.pressable {
+  transition:
+    transform 140ms var(--ease-out),
+    background-color 180ms var(--ease-out),
+    border-color 180ms var(--ease-out),
+    color 180ms var(--ease-out),
+    box-shadow 180ms var(--ease-out),
+    filter 180ms var(--ease-out);
+}
+
+.pressable:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 16px -10px rgb(28 18 20 / 0.35);
+}
+
+.pressable:active:not(:disabled) {
+  transform: scale(0.95) translateY(1px);
+  box-shadow: 0 1px 0 rgb(28 18 20 / 0.16);
+  filter: brightness(0.96);
+}
+
+.welcome-mark {
+  animation: mark-settle 700ms var(--ease-out) both;
+}
+
+.welcome-title {
+  animation: title-in 640ms var(--ease-out) 80ms both;
+}
+
+.welcome-rule {
+  transform-origin: center;
+  animation: rule-draw 700ms var(--ease-out) 220ms both;
+}
+
+@keyframes mark-settle {
+  from {
+    transform: translateY(10px) scale(0.94);
+    filter: blur(6px);
+    opacity: 0.7;
+  }
+  to {
+    transform: none;
+    filter: none;
+    opacity: 1;
+  }
+}
+
+@keyframes title-in {
+  from {
+    transform: translateY(8px);
+    opacity: 0.55;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+
+@keyframes rule-draw {
+  from {
+    transform: scaleX(0);
+    opacity: 0;
+  }
+  to {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .welcome-mark,
+  .welcome-title,
+  .welcome-rule,
+  .pressable {
+    animation: none;
+    transition:
+      background-color 120ms linear,
+      color 120ms linear,
+      border-color 120ms linear;
+    transform: none;
+    filter: none;
   }
 }
 
 .leaflet-container {
   height: 100%;
   width: 100%;
-  font: inherit;
-  background: #faf7f5;
+  background: var(--color-surface);
+}
+
+.leaflet-control-zoom {
+  display: none;
 }
 
 .leaflet-control-attribution {
   font-size: 9px;
+}
+
+.map-zoom {
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  z-index: 500;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.map-zoom button {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 999px;
+  background: #c41230;
+  color: #fffbfa;
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1;
+  box-shadow: 0 8px 16px -10px rgb(196 18 48 / 0.8);
 }
