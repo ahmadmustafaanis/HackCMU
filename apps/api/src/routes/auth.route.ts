@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { Router } from "express";
 import type { DemoLoginRequest, DemoLoginResponse, Student } from "shared-types";
+import { verifyAuth0IdToken } from "../auth/auth0Auth.js";
 import { verifyGoogleIdToken } from "../auth/googleAuth.js";
 import { requireAuth } from "../auth/requireAuth.js";
 import { signSessionToken } from "../auth/session.js";
@@ -29,9 +30,10 @@ interface UserDocument {
   availabilityLabel: string;
   avatarUrl?: string;
   googleId?: string;
+  auth0Id?: string;
   email?: string;
   emailVerified?: boolean;
-  authProvider?: "google" | "demo";
+  authProvider?: "google" | "auth0" | "demo";
   createdAt?: string;
 }
 
@@ -159,6 +161,69 @@ export function createAuthRouter(): Router {
           email: profile.email,
           emailVerified: profile.emailVerified,
           authProvider: "google",
+          createdAt: new Date().toISOString(),
+        };
+        await users.insertOne(doc);
+      }
+
+      const response: DemoLoginResponse = {
+        student: toStudent(doc),
+        sessionToken: signSessionToken(doc._id),
+      };
+      res.json(response);
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  // POST /api/auth/auth0 — Sign in with Auth0 (Universal Login). Body:
+  // { idToken } — the raw ID token the frontend's Auth0 SDK hands back after
+  // the user completes login. Verified server-side against our Auth0
+  // tenant's JWKS AND our own registered Client ID (see auth/auth0Auth.ts) —
+  // the frontend is never trusted to assert who signed in.
+  router.post("/auth0", async (req, res, next) => {
+    try {
+      const idToken = (req.body as { idToken?: string }).idToken;
+      if (!idToken) {
+        res.status(400).json({ error: "missing idToken" });
+        return;
+      }
+
+      const profile = await verifyAuth0IdToken(idToken);
+      const users = (await getDb()).collection<UserDocument>("users");
+
+      const existing = await users.findOne({ auth0Id: profile.auth0Id });
+      let doc: UserDocument;
+
+      if (existing) {
+        // Refresh the few fields Auth0 may have updated (name/photo) since
+        // last sign-in; never touch onboarding-owned fields (interests,
+        // vibes, etc.) here.
+        const updated = await users.findOneAndUpdate(
+          { _id: existing._id },
+          { $set: { name: profile.name, avatarUrl: profile.pictureUrl, emailVerified: profile.emailVerified } },
+          { returnDocument: "after" }
+        );
+        doc = updated ?? existing;
+      } else {
+        doc = {
+          _id: `auth0:${profile.auth0Id}`,
+          name: profile.name,
+          initials: initialsFor(profile.name),
+          program: "Undeclared",
+          year: "Sophomore",
+          bio: "",
+          interests: [],
+          vibes: [],
+          preferredActivities: [],
+          approximateLocation: "Cohon University Center",
+          walkingMinutes: 5,
+          availabilityLabel: "Flexible",
+          avatarUrl: profile.pictureUrl,
+          auth0Id: profile.auth0Id,
+          email: profile.email,
+          emailVerified: profile.emailVerified,
+          authProvider: "auth0",
           createdAt: new Date().toISOString(),
         };
         await users.insertOne(doc);
