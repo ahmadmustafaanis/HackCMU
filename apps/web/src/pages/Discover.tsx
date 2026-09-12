@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import type { Activity } from "shared-types";
 import { api } from "../api/client";
 import ActivityFeedCard from "../components/ActivityFeedCard";
@@ -50,6 +50,7 @@ function matchesCategory(activity: Activity, category: CategoryFilter): boolean 
 }
 
 export default function Discover() {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const [activities, setActivities] = useState<Activity[] | null>(null);
   const [loading, setLoading] = useState(true);
@@ -239,6 +240,7 @@ export default function Discover() {
               <ActivityFeedCard
                 key={activity.id}
                 activity={activity}
+                onClick={() => navigate(`/meetup/${activity.id}`)}
                 highlighted={location !== "all" && (activity.locationId ?? activity.approximateLocation) === location}
               />
             ))}

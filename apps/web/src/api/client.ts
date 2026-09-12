@@ -2,6 +2,7 @@ import type {
   ActivitiesResponse,
   ChatHistoryResponse,
   ConnectionsResponse,
+  DebugDatabaseResponse,
   DemoLoginRequest,
   DemoLoginResponse,
   FeedbackRequest,
@@ -72,4 +73,5 @@ export const api = {
     post<SendMessageRequest, SendMessageResponse>(`/chat/${conversationId}`, body),
   submitFeedback: (body: FeedbackRequest) => post<FeedbackRequest, FeedbackResponse>("/feedback", body),
   getConnections: (userId: string) => request<ConnectionsResponse>(`/connections/${userId}`),
+  getDebugDatabase: () => request<DebugDatabaseResponse>("/debug/database"),
 };

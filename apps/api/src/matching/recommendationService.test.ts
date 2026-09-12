@@ -6,7 +6,7 @@
 // repository throws on every method except retrieveCandidates, so any
 // accidental write-path call would fail the test immediately.
 import { beforeEach, describe, expect, it } from "vitest";
-import type { CacheService, EventRecord, EventRepository, NormalizedIntent } from "shared-types";
+import type { CacheService, EventRecord, EventRepository, NormalizedIntent, UserProfileService } from "shared-types";
 import { InMemoryMetricsService } from "./observability/metricsService.js";
 import { DefaultRecommendationService } from "./recommendationService.js";
 import type { ScoringCollaborators } from "./scoring/scoreCandidate.js";
@@ -157,5 +157,38 @@ describe("DefaultRecommendationService", () => {
     expect(first).toEqual(second);
     expect(first.length).toBeGreaterThan(0);
     expect(new Set(first).size).toBe(first.length); // no duplicates
+  });
+
+  it("prioritizes profile activities and keeps one suggestion per category", async () => {
+    const repository = new FakeEventRepository([]);
+    const profileService: UserProfileService = {
+      getProfile: async () => ({
+        id: "user-1",
+        name: "Alex Chen",
+        initials: "AC",
+        program: "Computer Science",
+        year: "Junior",
+        bio: "",
+        interests: ["Coding", "Art"],
+        vibes: ["Focused"],
+        preferredActivities: ["robotics"],
+        approximateLocation: "Gates Hillman Complex",
+        walkingMinutes: 4,
+        availabilityLabel: "Afternoon",
+      }),
+    };
+    const service = new DefaultRecommendationService(
+      repository,
+      new FakeCacheService(),
+      passthroughCollaborators,
+      metrics,
+      undefined,
+      profileService
+    );
+
+    const result = await service.suggestActivities("user-1");
+
+    expect(result[0]).toBe("robotics");
+    expect(new Set(result.map((id) => id))).toEqual(new Set(result));
   });
 });

@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import ActivitySetup from "./pages/ActivitySetup";
 import Chat from "./pages/Chat";
 import Connections from "./pages/Connections";
+import DebugDatabase from "./pages/DebugDatabase";
 import Discover from "./pages/Discover";
 import Feedback from "./pages/Feedback";
 import Home from "./pages/Home";
@@ -33,6 +34,7 @@ export default function App() {
         <Route path="/success/:matchId" element={<Success />} />
         <Route path="/discover" element={<Discover />} />
         <Route path="/connections" element={<Connections />} />
+        <Route path="/debug/database" element={<DebugDatabase />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

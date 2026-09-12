@@ -14,15 +14,18 @@ const STATUS_LABEL: Record<Activity["status"], string> = {
 
 interface ActivityFeedCardProps {
   activity: Activity;
+  onClick?: () => void;
   highlighted?: boolean;
 }
 
-export default function ActivityFeedCard({ activity, highlighted = false }: ActivityFeedCardProps) {
+export default function ActivityFeedCard({ activity, onClick, highlighted = false }: ActivityFeedCardProps) {
   const spotsLeft = Math.max(activity.capacity - activity.attendeeCount, 0);
 
   return (
-    <div
-      className={`flex flex-col gap-2 rounded-2xl border bg-card p-4 shadow-sm ${
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex flex-col gap-2 rounded-2xl border bg-card p-4 text-left shadow-sm ${
         highlighted ? "border-primary ring-2 ring-primary/20" : "border-line"
       }`}
     >
@@ -53,6 +56,6 @@ export default function ActivityFeedCard({ activity, highlighted = false }: Acti
           {activity.status === "open" && spotsLeft > 0 ? ` · ${spotsLeft} spot${spotsLeft === 1 ? "" : "s"} left` : ""}
         </span>
       </div>
-    </div>
+    </button>
   );
 }

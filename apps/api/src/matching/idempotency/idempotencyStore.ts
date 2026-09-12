@@ -2,7 +2,7 @@ import type { Collection } from "mongodb";
 import { ensureIndexes, getDb } from "../../db/connection.js";
 
 const POLL_INTERVAL_MS = 50;
-const MAX_POLL_MS = 2000;
+const MAX_POLL_MS = 30_000;
 
 interface IdempotencyDoc<T> {
   _id: string;
