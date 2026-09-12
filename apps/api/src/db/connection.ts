@@ -39,6 +39,10 @@ async function connect(): Promise<Db> {
 
 export async function ensureIndexes(db: Db): Promise<void> {
   await db.collection("users").createIndex({ location: "2dsphere" });
+  // sparse: true — demo-login users have neither field, and a plain unique
+  // index would otherwise reject every second document with a missing key.
+  await db.collection("users").createIndex({ googleId: 1 }, { unique: true, sparse: true });
+  await db.collection("users").createIndex({ email: 1 }, { unique: true, sparse: true });
   await db.collection("events").createIndex({ status: 1, expiresAt: 1, location: "2dsphere" });
   await db.collection("events").createIndex({ hostId: 1 });
   await db.collection("matches").createIndex({ studentId: 1, status: 1 });
