@@ -5,6 +5,7 @@ import { verifyAuth0IdToken } from "../auth/auth0Auth.js";
 import { verifyGoogleIdToken } from "../auth/googleAuth.js";
 import { requireAuth } from "../auth/requireAuth.js";
 import { signSessionToken } from "../auth/session.js";
+import { toPublicStudent, upsertAuth0User, upsertGoogleUser, type IdentityUserDocument } from "../auth/upsertIdentity.js";
 import { getDb } from "../db/connection.js";
 
 /** "users" collection document shape. Duplicated in each route file that
@@ -15,48 +16,10 @@ import { getDb } from "../db/connection.js";
  * part of the public `Student` type — never return them from a route.
  * `toStudent()` below is an explicit allowlist for exactly this reason: a
  * blind `{ ...rest }` spread would leak them the moment they're added here. */
-interface UserDocument {
-  _id: string;
-  name: string;
-  initials: string;
-  program: string;
-  year: string;
-  bio: string;
-  interests: string[];
-  vibes: string[];
-  preferredActivities: string[];
-  approximateLocation: string;
-  walkingMinutes: number;
-  availabilityLabel: string;
-  avatarUrl?: string;
-  googleId?: string;
-  auth0Id?: string;
-  email?: string;
-  emailVerified?: boolean;
-  authProvider?: "google" | "auth0" | "demo";
-  createdAt?: string;
-  ratingAverage?: number;
-  ratingCount?: number;
-}
+type UserDocument = IdentityUserDocument;
 
 function toStudent(doc: UserDocument): Student {
-  return {
-    id: doc._id,
-    name: doc.name,
-    initials: doc.initials,
-    program: doc.program,
-    year: doc.year,
-    bio: doc.bio,
-    interests: doc.interests as Student["interests"],
-    vibes: doc.vibes as Student["vibes"],
-    preferredActivities: doc.preferredActivities,
-    approximateLocation: doc.approximateLocation,
-    walkingMinutes: doc.walkingMinutes,
-    availabilityLabel: doc.availabilityLabel,
-    avatarUrl: doc.avatarUrl,
-    ratingAverage: doc.ratingAverage,
-    ratingCount: doc.ratingCount,
-  };
+  return toPublicStudent(doc);
 }
 
 function initialsFor(name: string): string {
@@ -132,43 +95,7 @@ export function createAuthRouter(): Router {
 
       const profile = await verifyGoogleIdToken(idToken);
       const users = (await getDb()).collection<UserDocument>("users");
-
-      const existing = await users.findOne({ googleId: profile.googleId });
-      let doc: UserDocument;
-
-      if (existing) {
-        // Refresh the few fields Google may have updated (name/photo) since
-        // last sign-in; never touch onboarding-owned fields (interests,
-        // vibes, etc.) here.
-        const updated = await users.findOneAndUpdate(
-          { _id: existing._id },
-          { $set: { name: profile.name, avatarUrl: profile.pictureUrl, emailVerified: profile.emailVerified } },
-          { returnDocument: "after" }
-        );
-        doc = updated ?? existing;
-      } else {
-        doc = {
-          _id: `google:${profile.googleId}`,
-          name: profile.name,
-          initials: initialsFor(profile.name),
-          program: "Undeclared",
-          year: "Sophomore",
-          bio: "",
-          interests: [],
-          vibes: [],
-          preferredActivities: [],
-          approximateLocation: "Cohon University Center",
-          walkingMinutes: 5,
-          availabilityLabel: "Flexible",
-          avatarUrl: profile.pictureUrl,
-          googleId: profile.googleId,
-          email: profile.email,
-          emailVerified: profile.emailVerified,
-          authProvider: "google",
-          createdAt: new Date().toISOString(),
-        };
-        await users.insertOne(doc);
-      }
+      const doc = await upsertGoogleUser(users, profile);
 
       const response: DemoLoginResponse = {
         student: toStudent(doc),
@@ -195,43 +122,7 @@ export function createAuthRouter(): Router {
 
       const profile = await verifyAuth0IdToken(idToken);
       const users = (await getDb()).collection<UserDocument>("users");
-
-      const existing = await users.findOne({ auth0Id: profile.auth0Id });
-      let doc: UserDocument;
-
-      if (existing) {
-        // Refresh the few fields Auth0 may have updated (name/photo) since
-        // last sign-in; never touch onboarding-owned fields (interests,
-        // vibes, etc.) here.
-        const updated = await users.findOneAndUpdate(
-          { _id: existing._id },
-          { $set: { name: profile.name, avatarUrl: profile.pictureUrl, emailVerified: profile.emailVerified } },
-          { returnDocument: "after" }
-        );
-        doc = updated ?? existing;
-      } else {
-        doc = {
-          _id: `auth0:${profile.auth0Id}`,
-          name: profile.name,
-          initials: initialsFor(profile.name),
-          program: "Undeclared",
-          year: "Sophomore",
-          bio: "",
-          interests: [],
-          vibes: [],
-          preferredActivities: [],
-          approximateLocation: "Cohon University Center",
-          walkingMinutes: 5,
-          availabilityLabel: "Flexible",
-          avatarUrl: profile.pictureUrl,
-          auth0Id: profile.auth0Id,
-          email: profile.email,
-          emailVerified: profile.emailVerified,
-          authProvider: "auth0",
-          createdAt: new Date().toISOString(),
-        };
-        await users.insertOne(doc);
-      }
+      const doc = await upsertAuth0User(users, profile);
 
       const response: DemoLoginResponse = {
         student: toStudent(doc),

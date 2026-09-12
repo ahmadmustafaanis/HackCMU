@@ -45,6 +45,7 @@ describe("MongoUserProfileService", () => {
       approximateLocation: "gates-hillman",
       walkingMinutes: 0,
       availabilityLabel: "Weekday evenings",
+      onboardingCompleted: true,
     });
   });
 

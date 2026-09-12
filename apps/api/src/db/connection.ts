@@ -27,10 +27,12 @@ async function connect(): Promise<Db> {
     connectionUri = uri;
     dbName = process.env.MONGODB_DB_NAME ?? "scotty";
   } else {
-    // Keep the database files off /tmp. Test runs and crashed dev servers can
-    // leave several hundred MB there, which prevents mongod from starting and
-    // makes the API appear to fail as a frontend proxy error.
-    const dbPath = path.resolve(process.cwd(), ".mongodb-memory-server", String(process.pid));
+    // Keep the database files off /tmp. Tests isolate by pid so parallel
+    // vitest workers don't share state. The local `tsx watch` server must
+    // reuse a stable path — a pid-keyed directory wiped Google/Auth0 users
+    // (and their onboarding) on every API restart.
+    const isolate = process.env.VITEST === "true" || process.env.NODE_ENV === "test";
+    const dbPath = path.resolve(process.cwd(), ".mongodb-memory-server", isolate ? String(process.pid) : "dev");
     mkdirSync(dbPath, { recursive: true });
     memoryServer = await MongoMemoryServer.create({ instance: { dbName: "scotty", dbPath } });
     connectionUri = memoryServer.getUri();

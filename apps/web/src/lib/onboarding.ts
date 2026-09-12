@@ -5,5 +5,6 @@ import type { Student } from "shared-types";
  * student has been through the wizard before — used to send a RETURNING
  * user straight to Home on sign-in instead of back through onboarding. */
 export function hasCompletedOnboarding(student: Student): boolean {
-  return student.interests.length > 0;
+  if (student.onboardingCompleted) return true;
+  return Array.isArray(student.interests) && student.interests.length > 0;
 }

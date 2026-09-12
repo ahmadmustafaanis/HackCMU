@@ -5,6 +5,17 @@ landed without reconstructing it from the diff.
 
 Newest entries go at the top. Keep each entry short: intent, files, follow-ups.
 
+## 2026-09-12 — Remember Google users after logout
+
+- Google/Auth0 sign-in now reuses the same user by provider id or email and
+  never clears onboarding fields. Finishing the wizard stores
+  `onboardingCompletedAt`; returning users skip the wizard.
+- Local `tsx watch` no longer wipes the in-process Mongo on every restart
+  (stable `.mongodb-memory-server/dev` path; tests still isolate by pid).
+- Files: `upsertIdentity.ts`, auth/onboarding/profile routes, `connection.ts`,
+  Welcome/OnboardingWizard, `hasCompletedOnboarding`.
+- Follow-up: delete `.mongodb-memory-server/dev` to reset local users.
+
 ## 2026-09-12 — Profile scroll
 
 - Profile was a flex column whose last card (`overflow-hidden` settings)

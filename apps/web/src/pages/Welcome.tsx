@@ -21,7 +21,9 @@ export default function Welcome() {
   // ONLY on `restoring` (not `student`): this must fire exactly once, right
   // when restoration finishes, to redirect a RETURNING visitor.
   useEffect(() => {
-    if (!restoring && student) navigate("/home", { replace: true });
+    if (!restoring && student) {
+      navigate(hasCompletedOnboarding(student) ? "/home" : "/onboarding", { replace: true });
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [restoring]);
 

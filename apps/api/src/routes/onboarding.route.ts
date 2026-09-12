@@ -25,11 +25,13 @@ interface UserDocument {
   emailVerified?: boolean;
   authProvider?: "google" | "demo";
   createdAt?: string;
+  onboardingCompletedAt?: string;
   ratingAverage?: number;
   ratingCount?: number;
 }
 
 function toStudent(doc: UserDocument): Student {
+  const interests = (doc.interests ?? []) as Student["interests"];
   return {
     id: doc._id,
     name: doc.name,
@@ -37,8 +39,8 @@ function toStudent(doc: UserDocument): Student {
     program: doc.program,
     year: doc.year,
     bio: doc.bio,
-    interests: doc.interests as Student["interests"],
-    vibes: doc.vibes as Student["vibes"],
+    interests,
+    vibes: (doc.vibes ?? []) as Student["vibes"],
     preferredActivities: doc.preferredActivities,
     approximateLocation: doc.approximateLocation,
     walkingMinutes: doc.walkingMinutes,
@@ -46,6 +48,7 @@ function toStudent(doc: UserDocument): Student {
     avatarUrl: doc.avatarUrl,
     ratingAverage: doc.ratingAverage,
     ratingCount: doc.ratingCount,
+    onboardingCompleted: Boolean(doc.onboardingCompletedAt) || interests.length > 0,
   };
 }
 
@@ -69,7 +72,7 @@ export function createOnboardingRouter(): Router {
 
       const updated = await users.findOneAndUpdate(
         { _id: userId },
-        { $set: { interests: body.interests, vibes: body.vibes, availabilityLabel: body.availabilityLabel } },
+        { $set: { interests: body.interests, vibes: body.vibes, availabilityLabel: body.availabilityLabel, onboardingCompletedAt: new Date().toISOString() } },
         { returnDocument: "after" }
       );
       const response: OnboardingResponse = toStudent(updated!);

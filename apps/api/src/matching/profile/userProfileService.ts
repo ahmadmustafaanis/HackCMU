@@ -13,6 +13,7 @@ interface RawUserDocument {
   preferredActivities?: string[];
   location?: { type: "Point"; coordinates: [number, number] };
   availability?: string;
+  onboardingCompletedAt?: string;
   ratingAverage?: number;
   ratingCount?: number;
 }
@@ -54,6 +55,7 @@ export class MongoUserProfileService implements UserProfileService {
       approximateLocation,
       walkingMinutes: 0,
       availabilityLabel: doc.availability ?? "Anytime",
+      onboardingCompleted: Boolean(doc.onboardingCompletedAt) || (doc.interests ?? []).length > 0,
       ...(typeof doc.ratingAverage === "number" ? { ratingAverage: doc.ratingAverage } : {}),
       ...(typeof doc.ratingCount === "number" ? { ratingCount: doc.ratingCount } : {}),
     };

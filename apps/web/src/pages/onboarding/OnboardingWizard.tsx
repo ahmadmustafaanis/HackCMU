@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { Interest, Vibe } from "shared-types";
 import Button from "../../components/Button";
 import Card from "../../components/Card";
 import OnboardingStepper from "../../components/OnboardingStepper";
 import { api } from "../../api/client";
+import { hasCompletedOnboarding } from "../../lib/onboarding";
 import { useSession } from "../../state/session";
 
 const INTERESTS: Interest[] = [
@@ -38,10 +39,16 @@ export default function OnboardingWizard() {
   const navigate = useNavigate();
   const { student, updateStudent } = useSession();
   const [step, setStep] = useState(0);
-  const [interests, setInterests] = useState<Interest[]>([]);
-  const [vibes, setVibes] = useState<Vibe[]>([]);
+  const [interests, setInterests] = useState<Interest[]>(() => student?.interests ?? []);
+  const [vibes, setVibes] = useState<Vibe[]>(() => student?.vibes ?? []);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (student && hasCompletedOnboarding(student)) {
+      navigate("/home", { replace: true });
+    }
+  }, [navigate, student]);
 
   const toggleInterest = (value: Interest) => {
     setInterests((prev) => (prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]));
