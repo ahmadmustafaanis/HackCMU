@@ -155,4 +155,22 @@ describe("MongoEventRepository", () => {
     expect(ids).toContain(open.id);
     expect(ids).not.toContain(expired.id);
   });
+
+  it("listForUser flushes expired and closed events from My Activities", async () => {
+    const repo = new MongoEventRepository();
+    const now = new Date();
+    const active = await repo.create(buildEvent({ participantIds: ["user-1"], participantCount: 1 }));
+    const expired = await repo.create(buildEvent({
+      participantIds: ["user-1"],
+      participantCount: 1,
+      expiresAt: new Date(now.getTime() - HOUR_MS).toISOString(),
+    }));
+    const cancelled = await repo.create(buildEvent({ participantIds: ["user-1"], status: "CANCELLED" }));
+
+    const results = await repo.listForUser("user-1", now, 50);
+    const ids = results.map((event) => event.id);
+    expect(ids).toContain(active.id);
+    expect(ids).not.toContain(expired.id);
+    expect(ids).not.toContain(cancelled.id);
+  });
 });

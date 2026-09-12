@@ -1,0 +1,11 @@
+[
+  { "id": "cohon-university-center", "label": "CUC", "lat": 40.4419, "lng": -79.9425 },
+  { "id": "uc-gym", "label": "UC Gym", "lat": 40.442, "lng": -79.9427 },
+  { "id": "gates-hillman", "label": "Gates", "lat": 40.4432, "lng": -79.9459 },
+  { "id": "wean-hall", "label": "Wean", "lat": 40.4425, "lng": -79.9455 },
+  { "id": "baker-hall", "label": "Baker", "lat": 40.4436, "lng": -79.9436 },
+  { "id": "tepper-quad", "label": "Tepper", "lat": 40.4453, "lng": -79.9436 },
+  { "id": "hunt-library", "label": "Hunt", "lat": 40.4429, "lng": -79.9439 },
+  { "id": "skibo-gym", "label": "Skibo", "lat": 40.4409, "lng": -79.9434 },
+  { "id": "the-cut", "label": "The Cut", "lat": 40.4444, "lng": -79.9455 }
+]

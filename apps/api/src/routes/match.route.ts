@@ -4,6 +4,8 @@ import { requireAuth } from "../auth/requireAuth.js";
 import { buildNormalizedIntent } from "../matching/intent/buildNormalizedIntent.js";
 import type { IdempotencyRunner } from "../matching/matchingService.js";
 import { buildMatchReasons, createMatch } from "../matches/matchesService.js";
+import { resolveExplicitOrRelativeTime } from "../matching/time/resolveTime.js";
+import { extractIntentSignals } from "../matching/intent/extractIntentSignals.js";
 
 /** See recommend.route.ts — only absolute times are resolved here; relative
  * phrases are left for matchingService's availability fallback to resolve. */
@@ -76,7 +78,18 @@ export function createMatchRouter(deps: {
           startTime: parseAbsoluteTime(body.intent.time),
         });
 
-        const result = await deps.matchingService.match(userId, intent, body.idempotencyKey);
+        const extracted = extractIntentSignals(body.intent.text, now);
+        const resolvedTime = resolveExplicitOrRelativeTime(body.intent.time, now) ?? (extracted.startTime
+          ? { startTime: extracted.startTime, endTime: undefined }
+          : null);
+        const resolvedIntent = {
+          ...intent,
+          locationIds: Array.from(new Set([...intent.locationIds, ...extracted.locationIds])),
+          ...(resolvedTime ? { startTime: resolvedTime.startTime, endTime: resolvedTime.endTime } : {}),
+        };
+
+  const matchKey = body.idempotencyKey ?? (body.forceCreate ? `force-create:${userId}:${Date.now()}` : undefined);
+  const result = await deps.matchingService.match(userId, resolvedIntent, matchKey, body.forceCreate === true);
 
         const requester = await deps.userProfileService.getProfile(userId).catch(() => null);
         const otherParticipantIds = result.event.participantIds.filter((id) => id !== userId);
@@ -98,7 +111,12 @@ export function createMatchRouter(deps: {
           matches.push(match);
         }
 
-        return { outcome: result.outcome, eventId: result.event.id, matches };
+        return {
+          outcome: result.outcome,
+          eventType: result.outcome === "MATCHED" ? "MATCHED_EXISTING" : "CREATED",
+          eventId: result.event.id,
+          matches,
+        };
       });
 
       res.json(response);

@@ -3,7 +3,7 @@ import { BoltIcon, CompassIcon, HomeIcon, PeopleIcon, UserIcon } from "./Icons";
 
 const TABS = [
   { to: "/home", label: "Home", Icon: HomeIcon, end: true },
-  { to: "/discover", label: "Discover", Icon: CompassIcon, end: false },
+  { to: "/activities", label: "Discover", Icon: CompassIcon, end: false },
   { to: "/matches", label: "Activities", Icon: BoltIcon, end: false },
   { to: "/connections", label: "Connections", Icon: PeopleIcon, end: false },
   { to: "/profile", label: "Profile", Icon: UserIcon, end: false },

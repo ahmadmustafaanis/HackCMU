@@ -66,9 +66,11 @@ export interface MatchRequest {
   userId: string;
   intent: StructuredIntentInput;
   idempotencyKey?: string;
+  forceCreate?: boolean;
 }
 export interface MatchResponse {
   outcome: "MATCHED" | "PENDING";
+  eventType?: "MATCHED_EXISTING" | "CREATED";
   eventId: string;
   /** Ranked candidate people for the Match Results screen — the top
    * candidate is the one actually joined/created; the rest are shown as
@@ -79,6 +81,19 @@ export interface MatchResponse {
 // GET /api/activities  (Discover / trending)
 export interface ActivitiesResponse {
   activities: Activity[];
+}
+
+export interface ActivityResponse {
+  activity: Activity;
+}
+
+export interface JoinEventRequest {
+  eventId: string;
+}
+
+export interface JoinEventResponse {
+  status: "accepted" | "full" | "expired" | "not_found";
+  activity?: Activity;
 }
 
 // POST /api/activities/:eventId/invite  (UI's "Invite" button — attempts to
@@ -122,4 +137,28 @@ export type FeedbackResponse = { ok: true };
 // GET /api/connections/:userId
 export interface ConnectionsResponse {
   connections: Match[];
+}
+
+export interface DebugCollection {
+  name: string;
+  count: number;
+  documents: Record<string, unknown>[];
+}
+
+export interface DebugDatabaseResponse {
+  database: string;
+  collections: DebugCollection[];
+}
+
+export interface Notification {
+  id: string;
+  type: "EVENT_JOINED";
+  eventId: string;
+  actorId: string;
+  message: string;
+  createdAt: string;
+}
+
+export interface NotificationsResponse {
+  notifications: Notification[];
 }

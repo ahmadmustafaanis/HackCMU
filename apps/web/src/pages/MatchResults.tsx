@@ -1,196 +1,156 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import type { Match, MatchResponse, Student } from "shared-types";
+import type { Activity, MatchResponse } from "shared-types";
 import { api } from "../api/client";
-import PersonCard, { type InviteState } from "../components/PersonCard";
 import TabBar from "../components/TabBar";
 import { useSession } from "../state/session";
 
-/** Coordination point with Agent F's Matching.tsx: after a successful
- * POST /api/match, it stashes the raw MatchResponse here so this screen can
- * render it without an extra round trip. If the key is missing/stale we
- * fall back to GET /api/matches/:userId below. */
 const LAST_MATCH_KEY = "scottys-circle:lastMatch";
-
 type LoadState = "loading" | "ready" | "error";
 
 export default function MatchResults() {
   const navigate = useNavigate();
   const { student } = useSession();
-
-  const [matches, setMatches] = useState<Match[] | null>(null);
-  const [eventId, setEventId] = useState<string | null>(null);
+  const [result, setResult] = useState<MatchResponse | null>(null);
+  const [activity, setActivity] = useState<Activity | null>(null);
   const [loadState, setLoadState] = useState<LoadState>("loading");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  const [profiles, setProfiles] = useState<Record<string, Student | null>>({});
-  const [inviteStates, setInviteStates] = useState<Record<string, InviteState>>({});
-  const [inviteMessages, setInviteMessages] = useState<Record<string, string>>({});
+  const [joinState, setJoinState] = useState<"idle" | "joining" | "joined" | "error">("idle");
+  const [joinMessage, setJoinMessage] = useState<string | null>(null);
+  const [lastIntent, setLastIntent] = useState<Record<string, unknown> | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-
     async function load() {
       setLoadState("loading");
       setErrorMessage(null);
-
+      let loaded: MatchResponse | null = null;
       const raw = sessionStorage.getItem(LAST_MATCH_KEY);
       if (raw) {
         try {
           const parsed = JSON.parse(raw) as MatchResponse;
-          if (parsed && Array.isArray(parsed.matches)) {
-            if (!cancelled) {
-              setMatches(parsed.matches);
-              setEventId(parsed.eventId ?? null);
-              setLoadState("ready");
-            }
-            return;
-          }
+          if (parsed && Array.isArray(parsed.matches)) loaded = parsed;
         } catch {
-          // malformed/stale session value — fall through to the API fallback
+          // Fall through to persisted matches.
         }
       }
-
-      if (!student) {
+      if (!loaded && student) {
+        try {
+          const matches = await api.getMatches(student.id);
+          loaded = { outcome: "PENDING", eventId: "", matches: matches.matches };
+        } catch {
+          if (!cancelled) {
+            setErrorMessage("Couldn't load your matched activity right now.");
+            setLoadState("error");
+          }
+          return;
+        }
+      }
+      if (!loaded) {
         if (!cancelled) {
-          setErrorMessage("Log in to see your matches.");
+          setErrorMessage("Log in to see your matched activity.");
           setLoadState("error");
         }
         return;
       }
-
+      if (cancelled) return;
+      setResult(loaded);
+      setLoadState("ready");
       try {
-        const res = await api.getMatches(student.id);
-        if (!cancelled) {
-          setMatches(res.matches);
-          setEventId(null);
-          setLoadState("ready");
-        }
+        const pending = sessionStorage.getItem("scottys-circle:lastMatchIntent");
+        if (pending) setLastIntent(JSON.parse(pending) as Record<string, unknown>);
       } catch {
-        if (!cancelled) {
-          setErrorMessage("Couldn't load your matches right now.");
-          setLoadState("error");
-        }
+        setLastIntent(null);
+      }
+      if (loaded.eventId) {
+        api.getActivity(loaded.eventId).then((response) => {
+          if (!cancelled) setActivity(response.activity);
+        }).catch(() => {
+          if (!cancelled) setErrorMessage("The matched event could not be loaded.");
+        });
       }
     }
-
     load();
     return () => {
       cancelled = true;
     };
   }, [student]);
 
-  useEffect(() => {
-    if (!matches || matches.length === 0) return;
-    let cancelled = false;
-    const ids = Array.from(new Set(matches.map((m) => m.studentId)));
-
-    ids.forEach((id) => {
-      api
-        .getProfile(id)
-        .then((profile) => {
-          if (!cancelled) setProfiles((prev) => ({ ...prev, [id]: profile }));
-        })
-        .catch(() => {
-          if (!cancelled) setProfiles((prev) => ({ ...prev, [id]: null }));
-        });
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [matches]);
-
-  function handleViewProfile(match: Match) {
-    navigate(`/people/${match.studentId}`, {
-      state: { matchId: match.id, eventId, activityType: match.activityType },
-    });
-  }
-
-  async function handleInvite(match: Match) {
-    if (!student) return;
-    setInviteStates((prev) => ({ ...prev, [match.id]: "loading" }));
-    setInviteMessages((prev) => {
-      const next = { ...prev };
-      delete next[match.id];
-      return next;
-    });
-
+  async function handleJoin() {
+    if (!result?.eventId) return;
+    setJoinState("joining");
+    setJoinMessage(null);
     try {
-      // Best-effort: when we only had GET /api/matches to go on (no
-      // MatchResponse in sessionStorage) there's no eventId to attach the
-      // invite to, so fall back to the match id itself.
-      const targetEventId = eventId ?? match.id;
-      const res = await api.invite(targetEventId, { userId: student.id, matchId: match.id });
-
-      if (res.status === "accepted") {
-        setInviteStates((prev) => ({ ...prev, [match.id]: "sent" }));
-        navigate(`/chat/${match.id}`);
-        return;
+      const response = await api.joinEvent(result.eventId);
+      if (response.status === "accepted") {
+        setJoinState("joined");
+        setJoinMessage("You have successfully joined this activity.");
+        if (response.activity) setActivity(response.activity);
+      } else {
+        setJoinState("error");
+        setJoinMessage(response.status === "full" ? "This activity is full." : "This activity is no longer available.");
       }
-
-      setInviteStates((prev) => ({ ...prev, [match.id]: "error" }));
-      setInviteMessages((prev) => ({
-        ...prev,
-        [match.id]: res.status === "full" ? "That activity just filled up." : "That invite has expired.",
-      }));
     } catch {
-      setInviteStates((prev) => ({ ...prev, [match.id]: "error" }));
-      setInviteMessages((prev) => ({ ...prev, [match.id]: "Couldn't send the invite. Try again." }));
+      setJoinState("error");
+      setJoinMessage("Could not join this activity right now.");
     }
   }
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden">
-      <div className="flex flex-1 flex-col overflow-y-auto p-5">
-      <button
-        type="button"
-        onClick={() => navigate("/home")}
-        className="mb-3 self-start text-sm text-muted"
-      >
-        ← Back
-      </button>
-
-      <h1 className="text-xl font-semibold text-ink">We found some people for you</h1>
-      <p className="mt-1 text-sm text-muted">
-        Ranked by shared interests, vibe, and availability.
-      </p>
-
-      <div className="mt-5 flex flex-1 flex-col gap-3">
-        {loadState === "loading" && (
-          <p className="mt-8 text-center text-sm text-muted">Finding your best matches…</p>
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <div className="feed-scroll min-h-0 flex-1 p-5">
+        <button type="button" onClick={() => navigate("/home")} className="mb-3 self-start text-sm text-muted">
+          ← Back
+        </button>
+        <h1 className="font-display text-xl font-medium text-ink">Your matched activity</h1>
+        <p className="mt-1 text-sm text-muted">Review the event before joining.</p>
+        {loadState === "loading" && <p className="mt-8 text-center text-sm text-muted">Loading your matched activity…</p>}
+        {loadState === "error" && <p className="mt-8 text-center text-sm text-primary">{errorMessage}</p>}
+        {loadState === "ready" && activity && (
+          <article className="mt-5 rounded-[14px] border border-line bg-card p-5">
+            <span className="inline-flex self-start rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+              {result?.eventType === "CREATED" ? "Created event" : "Matched event"}
+            </span>
+            <h2 className="mt-3 font-display text-lg font-medium text-ink">{activity.title}</h2>
+            <p className="mt-1 text-sm text-muted">{activity.description}</p>
+            <div className="mt-4 flex flex-wrap gap-3 text-sm text-muted">
+              <span>📍 {activity.approximateLocation}</span>
+              <span>🕒 {activity.timeLabel}</span>
+              <span>{activity.attendeeCount} going</span>
+            </div>
+            {joinMessage && <p className="mt-4 text-sm text-primary">{joinMessage}</p>}
+            {result?.eventType === "CREATED" ? (
+              <button
+                type="button"
+                onClick={() => navigate("/activities")}
+                className="mt-5 w-full rounded-2xl bg-primary py-3 text-sm font-semibold text-white"
+              >
+                View My Activities
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleJoin}
+                disabled={joinState === "joining" || joinState === "joined"}
+                className="mt-5 w-full rounded-2xl bg-primary py-3 text-sm font-semibold text-white disabled:opacity-50"
+              >
+                {joinState === "joining" ? "Joining…" : joinState === "joined" ? "Joined" : "Join activity"}
+              </button>
+            )}
+            {result?.eventType !== "CREATED" && lastIntent && (
+              <button
+                type="button"
+                onClick={() => navigate("/matching", { state: { ...lastIntent, forceCreate: true } })}
+                className="mt-3 w-full rounded-2xl border border-line py-3 text-sm font-semibold text-ink"
+              >
+                Create my own activity
+              </button>
+            )}
+          </article>
         )}
-
-        {loadState === "error" && (
-          <div className="mt-8 rounded-2xl border border-line bg-card p-5 text-center">
-            <p className="text-sm text-ink">{errorMessage}</p>
-          </div>
+        {loadState === "ready" && !activity && (
+          <p className="mt-8 text-center text-sm text-muted">No event details are available yet.</p>
         )}
-
-        {loadState === "ready" && matches && matches.length === 0 && (
-          <div className="mt-8 rounded-2xl border border-line bg-card p-5 text-center">
-            <p className="text-sm font-medium text-ink">No matches yet</p>
-            <p className="mt-1 text-sm text-muted">
-              Try a different activity or check back in a bit. New people join all the time.
-            </p>
-          </div>
-        )}
-
-        {loadState === "ready" &&
-          matches &&
-          matches.map((match, index) => (
-            <PersonCard
-              key={match.id}
-              match={match}
-              student={profiles[match.studentId] ?? null}
-              variant={index === 0 ? "featured" : "row"}
-              onViewProfile={() => handleViewProfile(match)}
-              onInvite={() => handleInvite(match)}
-              inviteState={inviteStates[match.id] ?? "idle"}
-              inviteMessage={inviteMessages[match.id] ?? null}
-            />
-          ))}
-      </div>
       </div>
       <TabBar />
     </div>

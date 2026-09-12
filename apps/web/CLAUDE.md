@@ -20,4 +20,5 @@ for titles, Source Sans 3 for UI. Stroke icons, not emoji. See `DESIGN.md`.
 ## Conventions
 
 - All API calls go through `src/api/client.ts`; components don't call `fetch` directly.
-- No real auth — the demo login flow just stores a `sessionToken` + `Student` from `POST /api/auth/demo-login`.
+- Real sign-in options are Google (`GoogleSignInButton` → `POST /api/auth/google`) and Auth0 (`Auth0SignInButton` → `POST /api/auth/auth0`, via `@auth0/auth0-react`'s `Auth0Provider` in `main.tsx`); `POST /api/auth/demo-login` ("Continue as Guest") is kept for local dev without either configured. All three return the same `{ student, sessionToken }` shape, stored by `state/session.tsx`.
+- Every route except `/` (Welcome) and `/login` is wrapped in `components/RequireAuth.tsx` (see `App.tsx`), which redirects to `/` when there's no verified session — add new authenticated pages inside that `<Route>` group, not alongside it.

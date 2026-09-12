@@ -1,3 +1,5 @@
+import { mkdirSync } from "node:fs";
+import path from "node:path";
 import { MongoClient, type Db } from "mongodb";
 import { MongoMemoryServer } from "mongodb-memory-server";
 
@@ -25,7 +27,12 @@ async function connect(): Promise<Db> {
     connectionUri = uri;
     dbName = process.env.MONGODB_DB_NAME ?? "scotty";
   } else {
-    memoryServer = await MongoMemoryServer.create({ instance: { dbName: "scotty" } });
+    // Keep the database files off /tmp. Test runs and crashed dev servers can
+    // leave several hundred MB there, which prevents mongod from starting and
+    // makes the API appear to fail as a frontend proxy error.
+    const dbPath = path.resolve(process.cwd(), ".mongodb-memory-server", String(process.pid));
+    mkdirSync(dbPath, { recursive: true });
+    memoryServer = await MongoMemoryServer.create({ instance: { dbName: "scotty", dbPath } });
     connectionUri = memoryServer.getUri();
     dbName = "scotty";
     // eslint-disable-next-line no-console

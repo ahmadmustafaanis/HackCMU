@@ -24,6 +24,7 @@ export interface EventRepository {
   getById(eventId: string): Promise<EventRecord | null>;
   /** For the read-only demo/browse surface (Discover, GET /api/activities). */
   listOpen(now: Date, limit: number): Promise<EventRecord[]>;
+  listForUser(userId: string, now: Date, limit: number): Promise<EventRecord[]>;
 }
 
 export interface CacheService {
@@ -98,5 +99,5 @@ export interface MatchingService {
   /** Core authoritative path: semantic parse (if needed) → resolve time/
    * location → candidate retrieval → hard filter → rank → transactional
    * join-or-create. Idempotent per (userId, idempotencyKey). */
-  match(userId: string, intent: NormalizedIntent, idempotencyKey?: string): Promise<import("./matching.js").MatchResult>;
+  match(userId: string, intent: NormalizedIntent, idempotencyKey?: string, forceCreate?: boolean): Promise<import("./matching.js").MatchResult>;
 }

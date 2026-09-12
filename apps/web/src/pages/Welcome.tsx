@@ -1,14 +1,18 @@
-import { useEffect, useState } from "react";
+import { useAuth0 } from "@auth0/auth0-react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import Auth0SignInButton from "../components/Auth0SignInButton";
 import Button from "../components/Button";
 import { PawMark } from "../components/Icons";
 import GoogleSignInButton from "../components/GoogleSignInButton";
 import { api } from "../api/client";
+import { hasCompletedOnboarding } from "../lib/onboarding";
 import { useSession } from "../state/session";
 
 export default function Welcome() {
   const navigate = useNavigate();
   const { student, restoring, setSession } = useSession();
+  const { isAuthenticated: auth0Authenticated, isLoading: auth0Loading, error: auth0Error, getIdTokenClaims } = useAuth0();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,8 +34,8 @@ export default function Welcome() {
     setError(null);
     try {
       const { student: signedInStudent, sessionToken } = await api.googleLogin(idToken);
-      setSession(signedInStudent, sessionToken);
-      navigate("/onboarding");
+      setSession(signedInStudent, sessionToken, "google");
+      navigate(hasCompletedOnboarding(signedInStudent) ? "/home" : "/onboarding");
     } catch {
       setError("Google sign-in failed. Please try again.");
     } finally {
@@ -39,13 +43,48 @@ export default function Welcome() {
     }
   };
 
+  // Surfaces Auth0 SDK-level failures (e.g. a redirect callback that Auth0
+  // itself rejected) — distinct from the exchange effect below, which
+  // handles our OWN backend call failing after a successful Auth0 login.
+  useEffect(() => {
+    if (auth0Error) setError("Auth0 sign-in failed. Please try again.");
+  }, [auth0Error]);
+
+  // Completes an Auth0 Universal Login redirect: loginWithRedirect() leaves
+  // and re-enters the app (unlike the Google/Guest handlers, which resolve
+  // in place), so once useAuth0() reports isAuthenticated we pick up here,
+  // exchange the ID token for our own session, and continue exactly like
+  // the other two sign-in paths. `exchangeStarted` guards against React's
+  // dev-only StrictMode double-effect-invoke firing this twice.
+  const exchangeStarted = useRef(false);
+  useEffect(() => {
+    if (auth0Loading || !auth0Authenticated || student || exchangeStarted.current) return;
+    exchangeStarted.current = true;
+    (async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const claims = await getIdTokenClaims();
+        if (!claims?.__raw) throw new Error("Auth0 did not return an ID token");
+        const { student: signedInStudent, sessionToken } = await api.auth0Login(claims.__raw);
+        setSession(signedInStudent, sessionToken, "auth0");
+        navigate(hasCompletedOnboarding(signedInStudent) ? "/home" : "/onboarding");
+      } catch {
+        setError("Auth0 sign-in failed. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [auth0Loading, auth0Authenticated, student]);
+
   const handleGuestContinue = async () => {
     setLoading(true);
     setError(null);
     try {
       const { student: guestStudent, sessionToken } = await api.demoLogin({});
-      setSession(guestStudent, sessionToken);
-      navigate("/onboarding");
+      setSession(guestStudent, sessionToken, "demo");
+      navigate(hasCompletedOnboarding(guestStudent) ? "/home" : "/onboarding");
     } catch {
       setError("Couldn't reach the server. Please try again.");
     } finally {
@@ -77,6 +116,7 @@ export default function Welcome() {
 
       <div className="flex w-full flex-col items-center gap-4">
         <GoogleSignInButton onCredential={handleGoogleCredential} />
+        <Auth0SignInButton disabled={loading} />
 
         <div className="flex w-full items-center gap-3 text-xs text-muted">
           <span className="h-px flex-1 bg-line" />

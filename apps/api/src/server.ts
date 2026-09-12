@@ -31,10 +31,12 @@ import { createActivitiesRouter } from "./routes/activities.route.js";
 import { createAuthRouter } from "./routes/auth.route.js";
 import { createChatRouter } from "./routes/chat.route.js";
 import { createConnectionsRouter } from "./routes/connections.route.js";
+import { createDebugRouter } from "./routes/debug.route.js";
 import { createFeedbackRouter } from "./routes/feedback.route.js";
 import { createMatchRouter } from "./routes/match.route.js";
 import { createMatchesRouter } from "./routes/matches.route.js";
 import { createOnboardingRouter } from "./routes/onboarding.route.js";
+import { createNotificationsRouter } from "./routes/notifications.route.js";
 import { createProfileRouter } from "./routes/profile.route.js";
 import { createRecommendRouter } from "./routes/recommend.route.js";
 
@@ -219,7 +221,14 @@ async function bootstrap(): Promise<void> {
 
   await seedDemoEventsIfEmpty(eventRepository);
 
-  const recommendationService = new DefaultRecommendationService(eventRepository, cache, scoringCollaborators, metrics);
+  const recommendationService = new DefaultRecommendationService(
+    eventRepository,
+    cache,
+    scoringCollaborators,
+    metrics,
+    undefined,
+    userProfileService
+  );
   const matchingService = new DefaultMatchingService(
     eventRepository,
     semanticParser,
@@ -240,6 +249,7 @@ async function bootstrap(): Promise<void> {
 
   app.use("/api/auth", createAuthRouter());
   app.use("/api/onboarding", createOnboardingRouter());
+  app.use("/api/notifications", createNotificationsRouter());
   app.use("/api/profile", createProfileRouter());
   app.use("/api/recommend", createRecommendRouter({ recommendationService }));
   app.use("/api/match", createMatchRouter({ matchingService, userProfileService, idempotencyRunner }));
@@ -248,6 +258,7 @@ async function bootstrap(): Promise<void> {
   app.use("/api/chat", createChatRouter());
   app.use("/api/feedback", createFeedbackRouter());
   app.use("/api/connections", createConnectionsRouter());
+  app.use("/api/debug", createDebugRouter());
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {

@@ -14,15 +14,16 @@ const STATUS_LABEL: Record<Activity["status"], string> = {
 
 interface ActivityFeedCardProps {
   activity: Activity;
+  onClick?: () => void;
   highlighted?: boolean;
 }
 
-export default function ActivityFeedCard({ activity, highlighted = false }: ActivityFeedCardProps) {
-  const spotsLeft = Math.max(activity.capacity - activity.attendeeCount, 0);
-
+export default function ActivityFeedCard({ activity, onClick, highlighted = false }: ActivityFeedCardProps) {
   return (
-    <div
-      className={`flex flex-col gap-2 rounded-[14px] border bg-card p-4 ${
+    <button
+      type="button"
+      onClick={onClick}
+      className={`pressable flex w-full flex-col gap-2 rounded-[14px] border bg-card p-4 text-left ${
         highlighted ? "border-primary" : "border-line"
       }`}
     >
@@ -48,11 +49,8 @@ export default function ActivityFeedCard({ activity, highlighted = false }: Acti
         <span className="rounded-full border border-line px-2.5 py-1 text-[11px] font-medium text-muted">
           {activity.vibe}
         </span>
-        <span className="text-xs text-muted">
-          {activity.attendeeCount}/{activity.capacity} joined
-          {activity.status === "open" && spotsLeft > 0 ? ` · ${spotsLeft} spot${spotsLeft === 1 ? "" : "s"} left` : ""}
-        </span>
+        <span className="text-xs text-muted">{activity.attendeeCount} going</span>
       </div>
-    </div>
+    </button>
   );
 }

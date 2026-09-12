@@ -1,3 +1,4 @@
+import { useAuth0 } from "@auth0/auth0-react";
 import { useNavigate } from "react-router-dom";
 import { useSession } from "../state/session";
 import TabBar from "../components/TabBar";
@@ -25,12 +26,27 @@ function ChipGroup({ title, items }: { title: string; items: string[] }) {
 }
 
 export default function Profile() {
-  const { student, clearSession } = useSession();
+  const { student, provider, clearSession } = useSession();
+  const { logout: auth0Logout } = useAuth0();
   const navigate = useNavigate();
 
   const handleReset = () => {
+    const wasAuth0 = provider === "auth0";
     clearSession();
-    navigate("/");
+    // A signed-in Auth0 session is Auth0's OWN SSO cookie, independent of
+    // our app session — clearSession() alone leaves it intact, so landing
+    // back on Welcome would silently re-authenticate via that lingering
+    // session instead of actually signing the user out. A real Auth0
+    // logout (full-page redirect) is the only way to end it. Checked via
+    // our OWN tracked `provider`, not useAuth0().isAuthenticated — that
+    // resets to false across a full page reload whenever this tenant's
+    // silent re-auth check can't complete without user interaction, even
+    // though the Auth0 session itself is still alive.
+    if (wasAuth0) {
+      auth0Logout({ logoutParams: { returnTo: window.location.origin } });
+    } else {
+      navigate("/");
+    }
   };
 
   return (
