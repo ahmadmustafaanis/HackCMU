@@ -510,3 +510,15 @@ production Web Push delivery.
 All user-facing activity time labels display event start only. Synthetic
 activity generation emits `start_time` and `duration_minutes`; runtime event
 records retain end time for matching calculations.
+
+When no explicit time is supplied, matching defaults to a start time 30 minutes
+from the current time, then applies the configured activity duration for the
+end time. Relative time phrases in Home text are passed to the deterministic
+intent extractor before semantic parsing; a UI default timestamp does not
+override phrases such as `in 10 mins`.
+
+My Activities queries filter out events whose `expiresAt` has passed or whose
+status is closed/cancelled, so stale records are flushed from the user-facing
+list at read time. The development database dashboard is available at
+`/debug/database` after starting the local app and is backed by the read-only
+`/api/debug/database` endpoint.

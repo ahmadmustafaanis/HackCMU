@@ -157,6 +157,20 @@ export function createActivitiesRouter(deps: {
     }
   });
 
+  router.get("/:eventId", async (req, res, next) => {
+    try {
+      const event = await deps.eventRepository.getById(req.params.eventId);
+      if (!event) {
+        res.status(404).json({ error: "activity not found" });
+        return;
+      }
+      const response: { activity: Activity } = { activity: toActivity(event) };
+      res.json(response);
+    } catch (err) {
+      next(err);
+    }
+  });
+
   // POST /api/activities/:eventId/invite — join this specific event through
   // the same atomic join path match() uses, then reflect the outcome onto
   // the Match record the UI is tracking. requireAuth: always the verified

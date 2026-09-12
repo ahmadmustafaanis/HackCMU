@@ -24,6 +24,7 @@ interface CampusHeatmapProps {
   onSelectLocation?: (locationId: string | null) => void;
   compact?: boolean;
   onUserLocation?: (coords: Coords) => void;
+  requestLocationOnMount?: boolean;
 }
 
 const CMU_CENTER: [number, number] = [40.4432, -79.9435];
@@ -114,6 +115,7 @@ export default function CampusHeatmap({
   onSelectLocation,
   compact = false,
   onUserLocation,
+  requestLocationOnMount = false,
 }: CampusHeatmapProps) {
   const mapRef = useRef<L.Map | null>(null);
   const [hovered, setHovered] = useState<string | null>(null);
@@ -171,6 +173,13 @@ export default function CampusHeatmap({
       { enableHighAccuracy: true, timeout: 8000, maximumAge: 15000 },
     );
   };
+
+  useEffect(() => {
+    if (requestLocationOnMount) locateMe();
+    // The Home page requests once when it mounts; the button remains available
+    // for an explicit retry after a denied or timed-out request.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [requestLocationOnMount]);
 
   const activeId = hovered ?? (selectedLocationId !== "all" ? selectedLocationId : null);
   const active = spots.find((s) => s.locationId === activeId);

@@ -38,6 +38,10 @@ function nearestBuilding(lat: number, lng: number): string {
   }, { id: "cohon-university-center", distance: Number.POSITIVE_INFINITY }).id;
 }
 
+function hasTextTime(text: string): boolean {
+  return /\bin\s+\d+\s*(minutes?|mins?|m|hours?|hrs?|h)\b/i.test(text);
+}
+
 export default function Home() {
   const { student } = useSession();
   const navigate = useNavigate();
@@ -132,10 +136,13 @@ export default function Home() {
   }, [student]);
 
   function startMatching() {
+    const text = freeText.trim() || undefined;
     const intent: StructuredIntentInput = {
       activityIds: selectedActivity ? [selectedActivity.canonicalId] : [],
-      text: freeText.trim() || undefined,
-      time: time === "now" ? new Date().toISOString() : time,
+      text,
+      // Let the server extract a relative time from text instead of allowing
+      // the default "now" selector to override phrases like "in 10 mins".
+      time: text && hasTextTime(text) ? undefined : time === "now" ? undefined : time,
       locationIds: locationId ? [locationId] : [],
     };
     if (intent.activityIds.length === 0 && !intent.text) return;
@@ -161,7 +168,7 @@ export default function Home() {
               type="text"
               value={freeText}
               onChange={(event) => setFreeText(event.target.value)}
-              placeholder='Try "treadmill" or "work on robotics"'
+              placeholder='Try "treadmill in 10 mins at CUC" or "coffee at Tepper in 10 mins"'
               className="w-full rounded-2xl border border-line bg-card px-4 py-3 text-sm text-ink placeholder:text-muted focus:border-primary focus:outline-none"
               aria-label="Describe what you want to do"
               onFocus={() => setIntentOpen(true)}
@@ -228,7 +235,7 @@ export default function Home() {
                   <button key={candidate.eventId} type="button" onClick={() => navigate(`/meetup/${candidate.eventId}`)} className="min-w-56 rounded-2xl border border-line bg-card p-3 text-left shadow-sm">
                     <p className="text-sm font-semibold text-ink">{candidate.title}</p>
                     <p className="mt-1 text-xs text-muted">{candidate.timeLabel} · {candidate.approximateLocation}</p>
-                    <p className="mt-2 text-xs font-medium text-ink">{candidate.attendeeCount}/{candidate.capacity} joined</p>
+                    <p className="mt-2 text-xs font-medium text-ink">{candidate.attendeeCount} going</p>
                   </button>
                 ))}
               </div>
@@ -252,7 +259,11 @@ export default function Home() {
                 activities={trending}
                 compact
                 selectedLocationId={locationId || "all"}
-                onUserLocation={({ lat, lng }) => setLocationId(nearestBuilding(lat, lng))}
+                requestLocationOnMount
+                onUserLocation={({ lat, lng }) => {
+                  setLocationId(nearestBuilding(lat, lng));
+                  setIntentOpen(true);
+                }}
                 onSelectLocation={(id) => {
                   if (id) setLocationId(id);
                 }}

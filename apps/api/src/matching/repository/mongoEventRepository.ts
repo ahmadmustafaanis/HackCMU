@@ -165,7 +165,11 @@ export class MongoEventRepository implements EventRepository {
 
   async listForUser(userId: string, _now: Date, limit: number): Promise<EventRecord[]> {
     const collection = await this.getCollection();
-    const docs = await collection.find({ participantIds: userId }).sort({ startTime: 1 }).limit(limit).toArray();
+    const docs = await collection.find({
+      participantIds: userId,
+      expiresAt: { $gt: _now.toISOString() },
+      status: { $in: ["OPEN", "FULL"] },
+    }).sort({ startTime: 1 }).limit(limit).toArray();
     return docs.map(toEventRecord);
   }
 }

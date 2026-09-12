@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { DefaultAvailabilityService } from "./availabilityService.js";
 
 describe("DefaultAvailabilityService", () => {
-  it("returns a window of exactly durationMinutes starting near now", async () => {
+  it("returns a window of exactly durationMinutes starting 30 minutes from now", async () => {
     const service = new DefaultAvailabilityService();
     const before = Date.now();
     const slot = await service.getNextAvailableSlot("user-1", 45);
@@ -15,8 +15,8 @@ describe("DefaultAvailabilityService", () => {
     const startMs = new Date(slot.startTime).getTime();
     const endMs = new Date(slot.endTime).getTime();
 
-    expect(startMs).toBeGreaterThanOrEqual(before);
-    expect(startMs).toBeLessThanOrEqual(after);
+    expect(startMs).toBeGreaterThanOrEqual(before + 30 * 60_000);
+    expect(startMs).toBeLessThanOrEqual(after + 30 * 60_000);
     expect(endMs - startMs).toBe(45 * 60_000);
   });
 

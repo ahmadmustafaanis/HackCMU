@@ -156,9 +156,10 @@ export class DefaultMatchingService implements MatchingService {
       return { startTime: intent.startTime, endTime };
     }
 
+    const fallbackStart = new Date(now.getTime() + 30 * 60_000);
     const fallback = {
-      startTime: now.toISOString(),
-      endTime: new Date(now.getTime() + durationMinutes * 60_000).toISOString(),
+      startTime: fallbackStart.toISOString(),
+      endTime: new Date(fallbackStart.getTime() + durationMinutes * 60_000).toISOString(),
     };
     return withFallback(() => this.availabilityService.getNextAvailableSlot(userId, durationMinutes), fallback);
   }

@@ -81,6 +81,10 @@ export interface ActivitiesResponse {
   activities: Activity[];
 }
 
+export interface ActivityResponse {
+  activity: Activity;
+}
+
 export interface JoinEventRequest {
   eventId: string;
 }
