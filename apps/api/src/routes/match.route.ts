@@ -82,9 +82,12 @@ export function createMatchRouter(deps: {
         const resolvedTime = resolveExplicitOrRelativeTime(body.intent.time, now) ?? (extracted.startTime
           ? { startTime: extracted.startTime, endTime: undefined }
           : null);
+        const resolvedLocationIds = extracted.locationIds.length > 0
+          ? extracted.locationIds
+          : intent.locationIds;
         const resolvedIntent = {
           ...intent,
-          locationIds: Array.from(new Set([...intent.locationIds, ...extracted.locationIds])),
+          locationIds: resolvedLocationIds,
           ...(resolvedTime ? { startTime: resolvedTime.startTime, endTime: resolvedTime.endTime } : {}),
         };
 

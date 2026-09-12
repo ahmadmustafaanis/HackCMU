@@ -19,8 +19,6 @@ interface ActivityFeedCardProps {
 }
 
 export default function ActivityFeedCard({ activity, onClick, highlighted = false }: ActivityFeedCardProps) {
-  const spotsLeft = Math.max(activity.capacity - activity.attendeeCount, 0);
-
   const content = (
     <>
       <div className="flex items-start justify-between gap-2">
@@ -46,8 +44,7 @@ export default function ActivityFeedCard({ activity, onClick, highlighted = fals
           {activity.vibe}
         </span>
         <span className="text-xs text-muted">
-          {activity.attendeeCount}/{activity.capacity} joined
-          {activity.status === "open" && spotsLeft > 0 ? ` · ${spotsLeft} spot${spotsLeft === 1 ? "" : "s"} left` : ""}
+          {activity.attendeeCount} joined
         </span>
       </div>
     </>

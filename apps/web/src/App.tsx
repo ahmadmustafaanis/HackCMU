@@ -4,7 +4,7 @@ import ActivitySetup from "./pages/ActivitySetup";
 import Chat from "./pages/Chat";
 import Connections from "./pages/Connections";
 import DebugDatabase from "./pages/DebugDatabase";
-import Discover from "./pages/Discover";
+import Activities from "./pages/Activities";
 import Feedback from "./pages/Feedback";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
@@ -42,8 +42,8 @@ export default function App() {
             <Route path="/meetup/:eventId" element={<Meetup />} />
             <Route path="/feedback/:eventId" element={<Feedback />} />
             <Route path="/success/:matchId" element={<Success />} />
-            <Route path="/discover" element={<Discover />} />
-            <Route path="/activities" element={<Discover />} />
+            <Route path="/discover" element={<Navigate to="/home" replace />} />
+            <Route path="/activities" element={<Activities />} />
             <Route path="/connections" element={<Connections />} />
             <Route path="/debug/database" element={<DebugDatabase />} />
             <Route path="/profile" element={<Profile />} />

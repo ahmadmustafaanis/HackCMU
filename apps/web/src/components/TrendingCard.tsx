@@ -12,7 +12,7 @@ export default function TrendingCard({ activity, onClick }: { activity: Activity
       <p className="line-clamp-2 font-display text-sm font-medium leading-snug text-ink">{activity.title}</p>
       <p className="line-clamp-1 text-xs text-muted">{activity.approximateLocation}</p>
       <p className="mt-auto text-xs font-medium text-ink">
-        {activity.attendeeCount}/{activity.capacity} joined
+        {activity.attendeeCount} joined
       </p>
     </>
   );

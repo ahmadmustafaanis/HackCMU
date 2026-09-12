@@ -86,6 +86,17 @@ function hasTextTime(text: string): boolean {
   return /\bin\s+\d+\s*(minutes?|mins?|m|hours?|hrs?|h)\b/i.test(text);
 }
 
+function hasTextLocation(text: string): boolean {
+  const normalized = text.toLowerCase();
+  return buildings.some((building) => {
+    const aliases = [building.id, building.label, building.id.replace(/-/g, " ")];
+    return aliases.some((alias) => {
+      const escaped = alias.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      return new RegExp(`(^|\\s)${escaped}(?=$|\\s|[,.;!?])`, "i").test(normalized);
+    });
+  });
+}
+
 type RecommendationState = "idle" | "loading" | "ready" | "error";
 
 export default function Home() {
@@ -205,7 +216,7 @@ export default function Home() {
       activityIds: selectedActivity ? [selectedActivity.canonicalId] : [],
       text,
       time: text && hasTextTime(text) ? undefined : time === "now" ? undefined : time,
-      locationIds: locationId ? [locationId] : [],
+      locationIds: text && hasTextLocation(text) ? [] : locationId ? [locationId] : [],
     };
     if (intent.activityIds.length === 0 && !intent.text) return;
     navigate("/matching", { state: { userId: student?.id, intent } });

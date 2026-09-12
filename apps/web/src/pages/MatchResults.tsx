@@ -81,8 +81,10 @@ export default function MatchResults() {
       const response = await api.joinEvent(result.eventId);
       if (response.status === "accepted") {
         setJoinState("joined");
-        setJoinMessage("You have successfully joined this activity.");
-        if (response.activity) setActivity(response.activity);
+        navigate("/activities", {
+          state: { successMessage: "You have successfully joined this activity!" },
+        });
+        return;
       } else {
         setJoinState("error");
         setJoinMessage(response.status === "full" ? "This activity is full." : "This activity is no longer available.");
@@ -114,7 +116,7 @@ export default function MatchResults() {
           </div>
           {joinMessage && <p className="mt-4 text-sm text-primary">{joinMessage}</p>}
           {result?.eventType === "CREATED" ? (
-            <button type="button" onClick={() => navigate("/activities")} className="mt-5 w-full rounded-2xl bg-primary py-3 text-sm font-semibold text-white">View My Activities</button>
+            <button type="button" onClick={() => navigate("/activities")} className="mt-5 w-full rounded-2xl bg-primary py-3 text-sm font-semibold text-white">View activity</button>
           ) : (
             <button type="button" onClick={handleJoin} disabled={joinState === "joining" || joinState === "joined"} className="mt-5 w-full rounded-2xl bg-primary py-3 text-sm font-semibold text-white disabled:opacity-50">
               {joinState === "joining" ? "Joining…" : joinState === "joined" ? "Joined" : "Join activity"}
