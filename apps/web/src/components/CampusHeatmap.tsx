@@ -23,6 +23,7 @@ interface CampusHeatmapProps {
   selectedLocationId?: string;
   onSelectLocation?: (locationId: string | null) => void;
   compact?: boolean;
+  onUserLocation?: (coords: Coords) => void;
 }
 
 const CMU_CENTER: [number, number] = [40.4432, -79.9435];
@@ -112,6 +113,7 @@ export default function CampusHeatmap({
   selectedLocationId = "all",
   onSelectLocation,
   compact = false,
+  onUserLocation,
 }: CampusHeatmapProps) {
   const mapRef = useRef<L.Map | null>(null);
   const [hovered, setHovered] = useState<string | null>(null);
@@ -161,6 +163,7 @@ export default function CampusHeatmap({
       (pos) => {
         const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
         setMe(coords);
+        onUserLocation?.(coords);
         setGeoStatus("ok");
         mapRef.current?.flyTo([coords.lat, coords.lng], 17, { duration: 0.5 });
       },

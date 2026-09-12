@@ -24,6 +24,7 @@ export interface EventRepository {
   getById(eventId: string): Promise<EventRecord | null>;
   /** For the read-only demo/browse surface (Discover, GET /api/activities). */
   listOpen(now: Date, limit: number): Promise<EventRecord[]>;
+  listForUser(userId: string, now: Date, limit: number): Promise<EventRecord[]>;
 }
 
 export interface CacheService {

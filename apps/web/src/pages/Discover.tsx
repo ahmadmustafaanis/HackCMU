@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import type { Activity } from "shared-types";
 import { api } from "../api/client";
 import ActivityFeedCard from "../components/ActivityFeedCard";
@@ -51,6 +51,8 @@ function matchesCategory(activity: Activity, category: CategoryFilter): boolean 
 
 export default function Discover() {
   const navigate = useNavigate();
+  const routeLocation = useLocation();
+  const myActivities = routeLocation.pathname === "/activities";
   const [searchParams, setSearchParams] = useSearchParams();
   const [activities, setActivities] = useState<Activity[] | null>(null);
   const [loading, setLoading] = useState(true);
@@ -77,14 +79,13 @@ export default function Discover() {
   const load = () => {
     setLoading(true);
     setError(null);
-    api
-      .getActivities()
+    (myActivities ? api.getMyActivities() : api.getActivities())
       .then((res) => setActivities(res.activities))
       .catch(() => setError("Couldn't load activities right now."))
       .finally(() => setLoading(false));
   };
 
-  useEffect(load, []);
+  useEffect(load, [myActivities]);
 
   const locations = useMemo(() => {
     const byId = new Map<string, string>();
@@ -126,8 +127,8 @@ export default function Discover() {
     <div className="flex flex-1 flex-col overflow-hidden">
       <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-4">
         <div>
-          <h1 className="text-xl font-semibold text-ink">Discover</h1>
-          <p className="text-sm text-muted">Find something happening near you.</p>
+          <h1 className="text-xl font-semibold text-ink">{myActivities ? "My Activities" : "Discover"}</h1>
+          <p className="text-sm text-muted">{myActivities ? "Activities you started or joined." : "Find something happening near you."}</p>
         </div>
 
         <input

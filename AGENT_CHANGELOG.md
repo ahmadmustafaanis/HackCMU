@@ -5,6 +5,20 @@ landed without reconstructing it from the diff.
 
 Newest entries go at the top. Keep each entry short: intent, files, follow-ups.
 
+## 2026-09-12 — Intent, location, activity lifecycle, and notifications
+
+- Removed the deprecated onboarding availability step; added deterministic
+  extraction for relative times and building aliases, including
+  `treadmill in 10 mins at CUC`.
+- Added configurable building coordinates, nearest-building map selection,
+  explicit view-versus-join details, My Activities, start-only labels, durable
+  host notifications, and synthetic start-time generation.
+- Files: matching intent/config/routes, notifications, Home/Meetup/Discover/
+  CampusHeatmap, shared API contracts, `README.md`, `SPEC.md`, and
+  `match_spec.md`.
+- Follow-up: replace browser polling with a production Web Push provider and
+  add browser tests for geolocation permission flows.
+
 ## 2026-09-12 — Real OpenStreetMap under the campus heatmap
 
 - Replaced the abstract SVG blobs with Leaflet + OSM tiles so Discover/Home

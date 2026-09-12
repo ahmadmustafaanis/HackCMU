@@ -11,14 +11,19 @@ export interface SynonymLookupResult {
  * activity id in its own right (e.g. normalized text "treadmill" naming the
  * taxonomy node directly). Returns null on no match — never throws. */
 export function synonymLookup(normalizedText: string): SynonymLookupResult | null {
-  const canonicalActivity = synonyms[normalizedText] ?? (normalizedText in taxonomy ? normalizedText : undefined);
-  if (!canonicalActivity) return null;
+  const isMentioned = (term: string) =>
+    normalizedText === term || normalizedText.includes(` ${term} `) || normalizedText.startsWith(`${term} `) || normalizedText.endsWith(` ${term}`);
+  const direct = synonyms[normalizedText] ?? (normalizedText in taxonomy ? normalizedText : undefined);
+  const synonymTerm = Object.keys(synonyms).sort((a, b) => b.length - a.length).find(isMentioned);
+  const taxonomyTerm = Object.keys(taxonomy).sort((a, b) => b.length - a.length).find(isMentioned);
+  const resolvedActivity = direct ?? (synonymTerm ? synonyms[synonymTerm] : undefined) ?? taxonomyTerm;
+  if (!resolvedActivity) return null;
 
-  const node = taxonomy[canonicalActivity];
+  const node = taxonomy[resolvedActivity];
   if (!node) return null;
 
-  const tags = [canonicalActivity];
+  const tags = [resolvedActivity];
   if (node.parent) tags.push(node.parent);
 
-  return { canonicalActivity, category: node.category, tags };
+  return { canonicalActivity: resolvedActivity, category: node.category, tags };
 }

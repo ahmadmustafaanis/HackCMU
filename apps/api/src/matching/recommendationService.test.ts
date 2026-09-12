@@ -60,6 +60,10 @@ class FakeEventRepository implements EventRepository {
   async listOpen(): Promise<never> {
     throw new Error("recommendationService must never call listOpen");
   }
+
+  async listForUser(): Promise<never> {
+    throw new Error("recommendationService must never call listForUser");
+  }
 }
 
 class FakeCacheService implements CacheService {

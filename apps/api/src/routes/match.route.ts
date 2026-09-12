@@ -5,6 +5,7 @@ import { buildNormalizedIntent } from "../matching/intent/buildNormalizedIntent.
 import type { IdempotencyRunner } from "../matching/matchingService.js";
 import { buildMatchReasons, createMatch } from "../matches/matchesService.js";
 import { resolveExplicitOrRelativeTime } from "../matching/time/resolveTime.js";
+import { extractIntentSignals } from "../matching/intent/extractIntentSignals.js";
 
 /** See recommend.route.ts — only absolute times are resolved here; relative
  * phrases are left for matchingService's availability fallback to resolve. */
@@ -77,10 +78,15 @@ export function createMatchRouter(deps: {
           startTime: parseAbsoluteTime(body.intent.time),
         });
 
-        const resolvedTime = resolveExplicitOrRelativeTime(body.intent.time, now);
-        const resolvedIntent = resolvedTime
-          ? { ...intent, startTime: resolvedTime.startTime, endTime: resolvedTime.endTime }
-          : intent;
+        const extracted = extractIntentSignals(body.intent.text, now);
+        const resolvedTime = resolveExplicitOrRelativeTime(body.intent.time, now) ?? (extracted.startTime
+          ? { startTime: extracted.startTime, endTime: undefined }
+          : null);
+        const resolvedIntent = {
+          ...intent,
+          locationIds: Array.from(new Set([...intent.locationIds, ...extracted.locationIds])),
+          ...(resolvedTime ? { startTime: resolvedTime.startTime, endTime: resolvedTime.endTime } : {}),
+        };
 
   const result = await deps.matchingService.match(userId, resolvedIntent, body.idempotencyKey);
 

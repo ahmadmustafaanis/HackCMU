@@ -474,3 +474,39 @@ The following are deliberately outside this implementation:
 These boundaries are product constraints, not accidental omissions. Changes to
 the frozen shared contracts must update every importing workspace and all API
 callers together.
+
+## 13. Current Activity Experience
+
+Onboarding is intentionally two steps: interests and vibes. Availability is
+selected per activity rather than stored as a deprecated onboarding step.
+
+Home is the intent entry surface. Its focused draft can include free text,
+activity buttons, a relative/absolute time, and a canonical building. The map
+uses Leaflet/OpenStreetMap and browser geolocation when permission is granted.
+`apps/web/src/config/buildings.json` contains frontend building coordinates;
+the API `config/locations.json` contains authoritative IDs, names, aliases,
+and coordinates. The nearest building becomes selected, with CUC as fallback.
+Natural-language aliases such as `CUC`, `Hunt`, and `Gates` are resolved
+deterministically.
+
+The activity lifecycle is explicitly view-first:
+
+```text
+activity card -> event details -> Back OR Join activity -> My Activities
+```
+
+`GET /api/activities` remains the open-event feed for recommendations.
+`GET /api/activities/mine` returns events where the authenticated user is a
+participant. The duplicate Discover/Activities tab is replaced by **My
+Activities**; `/discover` redirects to `/activities`.
+
+Joining uses one atomic repository operation. On success, the member is added
+to the event and a durable `notifications` record is created for the host.
+`GET /api/notifications` exposes those records to the host, and the web app
+requests browser notification permission and displays the latest join event
+when supported. This is a provider-ready boundary rather than a claim of
+production Web Push delivery.
+
+All user-facing activity time labels display event start only. Synthetic
+activity generation emits `start_time` and `duration_minutes`; runtime event
+records retain end time for matching calculations.

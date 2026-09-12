@@ -105,6 +105,13 @@ AGE_RANGES = ["18-20", "21-23", "24-26", "27-30"]
 ACTIVITY_STATUSES = ["open", "matched", "closed"]
 # Weighted so most freshly generated activities are still "open".
 ACTIVITY_STATUS_WEIGHTS = [0.65, 0.20, 0.15]
+ACTIVITY_DURATIONS_MINUTES = {
+    "workout": 60,
+    "coding": 90,
+    "basketball": 90,
+    "coffee chats": 45,
+    "walking": 30,
+}
 
 # --------------------------------------------------------------------------
 # Hand-rolled name lists (no `faker` dependency).
@@ -286,6 +293,8 @@ def generate_activities(rng: random.Random, count: int, users, now: datetime):
         # Activity location is near the creator's own location: jitter
         # again around the same hotspot the creator belongs to.
         location = jittered_point(rng, creator_hotspot)
+        start = now + timedelta(minutes=rng.randint(0, 24 * 60))
+        duration = ACTIVITY_DURATIONS_MINUTES.get(keywords[0], 60)
 
         activity = {
             "_id": str(uuid.uuid4()),
@@ -296,6 +305,8 @@ def generate_activities(rng: random.Random, count: int, users, now: datetime):
             "status": rng.choices(ACTIVITY_STATUSES, weights=ACTIVITY_STATUS_WEIGHTS, k=1)[0],
             "availability": rng.choice(AVAILABILITY_OPTIONS),
             "created_at": random_created_at(rng, now),
+            "start_time": start.isoformat().replace("+00:00", "Z"),
+            "duration_minutes": duration,
         }
         activities.append(activity)
     return activities
