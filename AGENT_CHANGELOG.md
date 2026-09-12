@@ -8,9 +8,11 @@ Newest entries go at the top. Keep each entry short: intent, files, follow-ups.
 ## 2026-09-12 — Messages tab, activity group chat rooms, join-status fix, and email notification hooks
 
 - Added a Messages tab (bottom nav) listing both 1:1 match conversations and
-  activity group chat rooms — a thread only appears once someone's actually
-  sent a message in it (an accepted match or joined activity with no
-  messages yet stays off the list until someone says hi).
+  activity group chat rooms. A match thread only appears once someone's
+  actually sent a message in it (an accepted match with no messages yet
+  stays off the list); an activity thread appears as soon as you've joined
+  it, regardless of message history — joining is itself the deliberate act
+  there, unlike a match, which can exist without you ever having chosen it.
 - Added a group chat room per activity, reusing the existing chat
   infrastructure with `conversationId === eventId` rather than a new
   system. Access is now enforced server-side via `event.participantIds`

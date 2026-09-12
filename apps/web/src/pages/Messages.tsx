@@ -10,7 +10,10 @@ interface ThreadItem {
   title: string;
   avatarLabel: string;
   isGroup: boolean;
-  lastMessage: ChatMessage;
+  /** Null for an activity you've joined but no one has messaged in yet —
+   * unlike a 1:1 match, joining an activity is itself the deliberate act
+   * that should surface it here, not a first message. */
+  lastMessage: ChatMessage | null;
   /** Only resolved for a group room's last message when someone else sent
    * it — a 1:1 thread never prefixes the other person's own messages. */
   lastMessageSenderName?: string;
@@ -50,17 +53,18 @@ export default function Messages() {
         );
 
         // Every joined activity has an implicit group room (see chat.route.ts
-        // — conversationId === eventId, membership === participantIds), same
-        // "only once someone's actually said something" rule applies here.
+        // — conversationId === eventId, membership === participantIds), and
+        // shows up here as soon as you've joined — joining is itself the
+        // deliberate act, unlike a match, which can exist without you ever
+        // having chosen to be in it.
         const activityEntries = Promise.allSettled(
-          activitiesRes.activities.map(async (a): Promise<ThreadItem | null> => {
+          activitiesRes.activities.map(async (a): Promise<ThreadItem> => {
             const history = await api.getChatHistory(a.id);
-            const lastMessage = history.messages.at(-1);
-            if (!lastMessage) return null;
+            const lastMessage = history.messages.at(-1) ?? null;
             const lastMessageSenderName =
-              lastMessage.senderId === student.id
-                ? undefined
-                : await api.getProfile(lastMessage.senderId).then((p) => p.name).catch(() => undefined);
+              lastMessage && lastMessage.senderId !== student.id
+                ? await api.getProfile(lastMessage.senderId).then((p) => p.name).catch(() => undefined)
+                : undefined;
             return { conversationId: a.id, title: a.title, avatarLabel: "👥", isGroup: true, lastMessage, lastMessageSenderName };
           }),
         );
@@ -120,8 +124,14 @@ export default function Messages() {
           !loading &&
           !error &&
           threads?.map((thread) => {
-            const prefix =
-              thread.lastMessage.senderId === student.id ? "You: " : thread.lastMessageSenderName ? `${thread.lastMessageSenderName}: ` : "";
+            const prefix = thread.lastMessage
+              ? thread.lastMessage.senderId === student.id
+                ? "You: "
+                : thread.lastMessageSenderName
+                  ? `${thread.lastMessageSenderName}: `
+                  : ""
+              : "";
+            const previewText = thread.lastMessage ? thread.lastMessage.text : "Say hi to start the conversation";
 
             return (
               <button
@@ -137,10 +147,10 @@ export default function Messages() {
                   <p className="truncate text-sm font-semibold text-ink">{thread.title}</p>
                   <p className="truncate text-xs text-muted">
                     {prefix}
-                    {thread.lastMessage.text}
+                    {previewText}
                   </p>
                 </div>
-                <span className="shrink-0 text-[11px] text-muted">{thread.lastMessage.timestampLabel}</span>
+                {thread.lastMessage && <span className="shrink-0 text-[11px] text-muted">{thread.lastMessage.timestampLabel}</span>}
               </button>
             );
           })}
