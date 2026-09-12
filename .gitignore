@@ -1,5 +1,6 @@
 # Dependencies
 node_modules/
+.mongodb-memory-server/
 
 # Env files — never commit secrets (Gemini/Google API key, Mongo URI, etc.)
 .env
