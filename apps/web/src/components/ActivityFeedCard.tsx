@@ -38,7 +38,7 @@ export default function ActivityFeedCard({ activity, onClick, highlighted = fals
           <p className="text-xs text-muted">{activity.type}</p>
         </div>
         <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium ${STATUS_STYLES[activity.status]}`}>
-          {STATUS_LABEL[activity.status]}
+          {activity.canRate && !activity.hasRated ? "Rate people" : STATUS_LABEL[activity.status]}
         </span>
       </div>
 

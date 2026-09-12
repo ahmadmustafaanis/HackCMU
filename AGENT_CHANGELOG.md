@@ -5,6 +5,28 @@ landed without reconstructing it from the diff.
 
 Newest entries go at the top. Keep each entry short: intent, files, follow-ups.
 
+## 2026-09-12 — Profile scroll
+
+- Profile was a flex column whose last card (`overflow-hidden` settings)
+  shrunk instead of overflowing, so Sign Out sat under the tab bar with
+  nothing to scroll. Content now sizes naturally inside `feed-scroll`.
+- Files: `apps/web/src/pages/Profile.tsx`, `apps/web/src/index.css`.
+
+## 2026-09-12 — Created-event clarity, end times, and peer ratings
+
+- When search creates an event, Match Results now says so plainly: new-event
+  banner, host copy, and a start–end time so it doesn't look like a match.
+- Events expose `startTime`/`endTime` and a start–end label. After start they
+  leave Home/Discover/matching/join. My Activities still shows them so the
+  group can chat, then rate after `endTime`.
+- After an event ends, each participant rates every other participant 1–5
+  (Uber-style). Averages show on Profile / person pages.
+- Files: shared-types Activity/Student/API, event repository + tests,
+  `peerRatingService`, activities/recommend routes, MatchResults/Meetup/
+  Feedback/Activities/Profile/Home, `StarRating`.
+- Follow-up: no reminder when rating opens; no minimum-rating threshold
+  before a public average is shown.
+
 ## 2026-09-12 — Messages tab, activity group chat rooms, join-status fix, and email notification hooks
 
 - Added a Messages tab (bottom nav) listing both 1:1 match conversations and

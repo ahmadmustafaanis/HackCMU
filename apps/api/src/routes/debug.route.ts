@@ -2,7 +2,7 @@ import { Router } from "express";
 import type { DebugDatabaseResponse } from "shared-types";
 import { getDb } from "../db/connection.js";
 
-const COLLECTIONS = ["users", "events", "matches", "chatMessages", "feedback", "connections", "notifications", "idempotencyKeys"];
+const COLLECTIONS = ["users", "events", "matches", "chatMessages", "feedback", "peerRatings", "connections", "notifications", "idempotencyKeys"];
 
 export function createDebugRouter(): Router {
   const router = Router();

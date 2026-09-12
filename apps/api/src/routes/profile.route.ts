@@ -22,6 +22,8 @@ interface UserDocument {
   walkingMinutes: number;
   availabilityLabel: string;
   avatarUrl?: string;
+  ratingAverage?: number;
+  ratingCount?: number;
 }
 
 function toStudent(doc: UserDocument): Student {
@@ -39,6 +41,8 @@ function toStudent(doc: UserDocument): Student {
     walkingMinutes: doc.walkingMinutes,
     availabilityLabel: doc.availabilityLabel,
     avatarUrl: doc.avatarUrl,
+    ratingAverage: doc.ratingAverage,
+    ratingCount: doc.ratingCount,
   };
 }
 

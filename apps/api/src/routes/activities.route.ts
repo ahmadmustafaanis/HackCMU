@@ -4,6 +4,7 @@ import type {
   ActivitiesResponse,
   ActivityStatus,
   EventRecord,
+  EventRatingsResponse,
   EventRepository,
   EventStatus,
   InviteRequest,
@@ -11,12 +12,16 @@ import type {
   JoinEventRequest,
   JoinEventResponse,
   RecommendationService,
+  SubmitPeerRatingsRequest,
+  SubmitPeerRatingsResponse,
   SuggestionsResponse,
 } from "shared-types";
-import { requireAuth } from "../auth/requireAuth.js";
+import { optionalAuth, requireAuth } from "../auth/requireAuth.js";
 import { locations } from "../config/index.js";
 import { getMatchById, updateMatchStatus } from "../matches/matchesService.js";
 import { notifyEventHost } from "../notifications/notificationService.js";
+import { getEventRatings, PeerRatingError, ratedEventIds, submitPeerRatings } from "../ratings/peerRatingService.js";
+import { formatTimeLabel } from "../shared/formatTimeLabel.js";
 
 function locationById(locationId: string) {
   return locations.find((l) => l.id === locationId);
@@ -24,19 +29,6 @@ function locationById(locationId: string) {
 
 function locationName(locationId: string): string {
   return locationById(locationId)?.name ?? locationId;
-}
-
-function formatTimeLabel(startIso: string, endIso: string): string {
-  const format = (iso: string) => {
-    const d = new Date(iso);
-    const hours24 = d.getHours();
-    const hours12 = hours24 % 12 === 0 ? 12 : hours24 % 12;
-    const minutes = d.getMinutes().toString().padStart(2, "0");
-    const period = hours24 < 12 ? "AM" : "PM";
-    return `${hours12}:${minutes} ${period}`;
-  };
-  void endIso;
-  return format(startIso);
 }
 
 function capitalize(text: string): string {
@@ -52,7 +44,8 @@ function capitalize(text: string): string {
 // per-viewer identity on the public, unauthenticated GET /activities feed —
 // callers there pass viewerHasJoined=false and fall back to the old
 // FULL-implies-joined approximation (ActivityStatus has no "full" state).
-function toActivityStatus(status: EventStatus, viewerHasJoined: boolean): ActivityStatus {
+function toActivityStatus(status: EventStatus, viewerHasJoined: boolean, ended: boolean): ActivityStatus {
+  if (ended) return "completed";
   switch (status) {
     case "OPEN":
       return viewerHasJoined ? "joined" : "open";
@@ -68,9 +61,16 @@ function toActivityStatus(status: EventStatus, viewerHasJoined: boolean): Activi
 
 const PLACEHOLDER_WALKING_MINUTES = 5;
 
-function toActivity(event: EventRecord, viewerId?: string): Activity {
+function toActivity(
+  event: EventRecord,
+  viewerId?: string,
+  extras: { now?: Date; hasRated?: boolean } = {},
+): Activity {
   const loc = locationById(event.locationId);
   const viewerHasJoined = viewerId != null && event.participantIds.includes(viewerId);
+  const now = extras.now ?? new Date();
+  const ended = new Date(event.endTime).getTime() <= now.getTime();
+  const othersJoined = event.participantIds.some((id) => id !== viewerId);
   return {
     id: event.id,
     title: event.title,
@@ -81,13 +81,17 @@ function toActivity(event: EventRecord, viewerId?: string): Activity {
     lat: loc?.lat,
     lng: loc?.lng,
     timeLabel: formatTimeLabel(event.startTime, event.endTime),
+    startTime: event.startTime,
+    endTime: event.endTime,
     walkingMinutes: PLACEHOLDER_WALKING_MINUTES,
     attendees: event.participantIds,
     attendeeCount: event.participantCount,
     capacity: event.capacity,
     hostId: event.hostId,
     vibe: event.vibe,
-    status: toActivityStatus(event.status, viewerHasJoined),
+    status: toActivityStatus(event.status, viewerHasJoined, ended),
+    canRate: Boolean(viewerHasJoined && ended && othersJoined),
+    hasRated: extras.hasRated ?? false,
   };
 }
 
@@ -123,8 +127,12 @@ export function createActivitiesRouter(deps: {
 
   router.get("/mine", requireAuth, async (req, res, next) => {
     try {
-      const events = await deps.eventRepository.listForUser(req.userId!, new Date(), 100);
-      const response: ActivitiesResponse = { activities: events.map((event) => toActivity(event, req.userId!)) };
+      const now = new Date();
+      const events = await deps.eventRepository.listForUser(req.userId!, now, 100);
+      const rated = await ratedEventIds(req.userId!, events.map((event) => event.id));
+      const response: ActivitiesResponse = {
+        activities: events.map((event) => toActivity(event, req.userId!, { now, hasRated: rated.has(event.id) })),
+      };
       res.json(response);
     } catch (err) {
       next(err);
@@ -164,16 +172,59 @@ export function createActivitiesRouter(deps: {
     }
   });
 
-  router.get("/:eventId", async (req, res, next) => {
+  router.get("/:eventId", optionalAuth, async (req, res, next) => {
     try {
       const event = await deps.eventRepository.getById(req.params.eventId);
       if (!event) {
         res.status(404).json({ error: "activity not found" });
         return;
       }
-      const response: { activity: Activity } = { activity: toActivity(event) };
+      const now = new Date();
+      const viewerId = req.userId;
+      const rated = viewerId ? await ratedEventIds(viewerId, [event.id]) : new Set<string>();
+      const response: { activity: Activity } = {
+        activity: toActivity(event, viewerId, { now, hasRated: rated.has(event.id) }),
+      };
       res.json(response);
     } catch (err) {
+      next(err);
+    }
+  });
+
+  router.get("/:eventId/ratings", requireAuth, async (req, res, next) => {
+    try {
+      const event = await deps.eventRepository.getById(req.params.eventId);
+      if (!event) {
+        res.status(404).json({ error: "activity not found" });
+        return;
+      }
+      const response: EventRatingsResponse = await getEventRatings(event, req.userId!, new Date());
+      res.json(response);
+    } catch (err) {
+      if (err instanceof PeerRatingError) {
+        res.status(err.status).json({ error: err.message });
+        return;
+      }
+      next(err);
+    }
+  });
+
+  router.post("/:eventId/ratings", requireAuth, async (req, res, next) => {
+    try {
+      const event = await deps.eventRepository.getById(req.params.eventId);
+      if (!event) {
+        res.status(404).json({ error: "activity not found" });
+        return;
+      }
+      const body = req.body as SubmitPeerRatingsRequest;
+      await submitPeerRatings(event, req.userId!, body, new Date());
+      const response: SubmitPeerRatingsResponse = { ok: true };
+      res.json(response);
+    } catch (err) {
+      if (err instanceof PeerRatingError) {
+        res.status(err.status).json({ error: err.message });
+        return;
+      }
       next(err);
     }
   });

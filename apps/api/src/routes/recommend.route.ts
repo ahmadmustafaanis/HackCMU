@@ -3,6 +3,7 @@ import type { RecommendRequest, RecommendResponse, RecommendedCandidate, Recomme
 import { locations } from "../config/index.js";
 import { buildNormalizedIntent } from "../matching/intent/buildNormalizedIntent.js";
 import { resolveExplicitOrRelativeTime } from "../matching/time/resolveTime.js";
+import { formatTimeLabel } from "../shared/formatTimeLabel.js";
 
 /** Only accepts an already-absolute time (e.g. an ISO string a date picker
  * produced). Relative-phrase parsing ("in 30 minutes") is deterministic
@@ -17,19 +18,6 @@ function parseAbsoluteTime(time?: string): string | undefined {
 
 function locationName(locationId: string): string {
   return locations.find((l) => l.id === locationId)?.name ?? locationId;
-}
-
-function formatTimeLabel(startIso: string, endIso: string): string {
-  const format = (iso: string) => {
-    const d = new Date(iso);
-    const hours24 = d.getHours();
-    const hours12 = hours24 % 12 === 0 ? 12 : hours24 % 12;
-    const minutes = d.getMinutes().toString().padStart(2, "0");
-    const period = hours24 < 12 ? "AM" : "PM";
-    return `${hours12}:${minutes} ${period}`;
-  };
-  void endIso;
-  return format(startIso);
 }
 
 export function createRecommendRouter(deps: { recommendationService: RecommendationService }): Router {

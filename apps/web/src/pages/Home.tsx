@@ -149,7 +149,8 @@ export default function Home() {
     api
       .getActivities()
       .then((res) => {
-        setAllActivities(res.activities);
+        const now = Date.now();
+        setAllActivities(res.activities.filter((activity) => new Date(activity.startTime).getTime() > now));
       })
       .catch(() => {
         setActivitiesError("Couldn't load campus activities right now.");

@@ -22,7 +22,8 @@ export interface EventRepository {
   joinIfValid(eventId: string, userId: string, now: Date): Promise<JoinResult>;
   create(event: Omit<EventRecord, "id">): Promise<EventRecord>;
   getById(eventId: string): Promise<EventRecord | null>;
-  /** For the read-only demo/browse surface (Discover, GET /api/activities). */
+  /** For the read-only demo/browse surface (Discover, GET /api/activities).
+   * Must hide events whose startTime has already passed. */
   listOpen(now: Date, limit: number): Promise<EventRecord[]>;
   listForUser(userId: string, now: Date, limit: number): Promise<EventRecord[]>;
 }

@@ -35,6 +35,8 @@ interface UserDocument {
   emailVerified?: boolean;
   authProvider?: "google" | "auth0" | "demo";
   createdAt?: string;
+  ratingAverage?: number;
+  ratingCount?: number;
 }
 
 function toStudent(doc: UserDocument): Student {
@@ -52,6 +54,8 @@ function toStudent(doc: UserDocument): Student {
     walkingMinutes: doc.walkingMinutes,
     availabilityLabel: doc.availabilityLabel,
     avatarUrl: doc.avatarUrl,
+    ratingAverage: doc.ratingAverage,
+    ratingCount: doc.ratingCount,
   };
 }
 

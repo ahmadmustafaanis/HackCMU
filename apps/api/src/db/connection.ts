@@ -54,6 +54,8 @@ export async function ensureIndexes(db: Db): Promise<void> {
   await db.collection("events").createIndex({ hostId: 1 });
   await db.collection("matches").createIndex({ studentId: 1, status: 1 });
   await db.collection("chatMessages").createIndex({ conversationId: 1, createdAt: 1 });
+  await db.collection("peerRatings").createIndex({ eventId: 1, raterId: 1, rateeId: 1 }, { unique: true });
+  await db.collection("peerRatings").createIndex({ rateeId: 1 });
   // No explicit index needed here: MongoDB's implicit `_id` index is already
   // unique, and an explicit `{ unique: true }` on an `_id` index spec is
   // rejected by the server (InvalidIndexSpecificationOption) — that's what

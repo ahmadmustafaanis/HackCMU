@@ -198,6 +198,18 @@ export function SparkIcon(props: IconProps) {
   );
 }
 
+export function StarIcon({ filled = false, ...props }: IconProps & { filled?: boolean }) {
+  return (
+    <Icon {...props}>
+      <path
+        d="M12 3.6 14.2 9h5.8l-4.6 3.5 1.8 5.6L12 14.8 6.8 18.1 8.6 12.5 4 9h5.8z"
+        {...stroke}
+        fill={filled ? "currentColor" : "none"}
+      />
+    </Icon>
+  );
+}
+
 export const ACTIVITY_ICONS: Record<string, ComponentType<IconProps>> = {
   eat: EatIcon,
   coffee: CoffeeIcon,

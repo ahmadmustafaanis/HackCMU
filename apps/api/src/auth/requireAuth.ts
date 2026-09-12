@@ -35,3 +35,17 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
   req.userId = session.userId;
   next();
 }
+
+/** Attaches `req.userId` when a valid session is present; never 401s.
+ * Use on read paths that personalize when signed in (canRate, joined). */
+export function optionalAuth(req: Request, _res: Response, next: NextFunction): void {
+  const header = req.header("authorization");
+  const token = header?.startsWith("Bearer ") ? header.slice("Bearer ".length) : undefined;
+  if (!token) {
+    next();
+    return;
+  }
+  const session = verifySessionToken(token);
+  if (session) req.userId = session.userId;
+  next();
+}

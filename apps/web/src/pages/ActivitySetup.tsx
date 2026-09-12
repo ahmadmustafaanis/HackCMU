@@ -45,7 +45,7 @@ const LOCATIONS: LocationOption[] = [
 function buildTimeString(option: TimeOptionId, laterValue: string): string | undefined {
   switch (option) {
     case "now":
-      return new Date().toISOString();
+      return undefined;
     case "30min":
       return "in 30 minutes";
     case "1hr":

@@ -16,8 +16,9 @@ function toEventRecord(doc: WithId<EventDocument>): EventRecord {
 /**
  * MongoDB-backed EventRepository. See ../CLAUDE.md and this directory's
  * CLAUDE.md for the atomicity contract this class must uphold:
- *   - every read path independently filters expiresAt > now (never trusts
- *     status alone — a background expiry sweep may not have run yet)
+ *   - every public read path independently filters expiresAt > now and
+ *     startTime > now (never trusts status alone — a background expiry
+ *     sweep may not have run yet). listForUser keeps ended events for rating.
  *   - joinIfValid is a SINGLE findOneAndUpdate; capacity/duplicate checks
  *     live in the same atomic operation as the mutation, never as a
  *     preceding read-then-write.
@@ -52,6 +53,7 @@ export class MongoEventRepository implements EventRepository {
     const filter: Filter<EventDocument> = {
       status: "OPEN",
       expiresAt: { $gt: now.toISOString() },
+      startTime: { $gt: now.toISOString() },
       isFull: false,
     };
 
@@ -81,6 +83,7 @@ export class MongoEventRepository implements EventRepository {
         _id: eventId,
         status: "OPEN",
         expiresAt: { $gt: nowIso },
+        startTime: { $gt: nowIso },
         participantIds: { $ne: userId },
         isFull: false,
       },
@@ -116,7 +119,7 @@ export class MongoEventRepository implements EventRepository {
     if (existing.participantIds.includes(userId)) {
       return { ok: false, reason: "ALREADY_JOINED" };
     }
-    if (existing.expiresAt <= nowIso) {
+    if (existing.expiresAt <= nowIso || existing.startTime <= nowIso) {
       return { ok: false, reason: "EXPIRED" };
     }
     if (existing.isFull || existing.participantCount >= existing.capacity) {
@@ -157,7 +160,11 @@ export class MongoEventRepository implements EventRepository {
   async listOpen(now: Date, limit: number): Promise<EventRecord[]> {
     const collection = await this.getCollection();
     const docs = await collection
-      .find({ status: "OPEN", expiresAt: { $gt: now.toISOString() } })
+      .find({
+        status: "OPEN",
+        expiresAt: { $gt: now.toISOString() },
+        startTime: { $gt: now.toISOString() },
+      })
       .limit(limit)
       .toArray();
     return docs.map(toEventRecord);
@@ -167,8 +174,7 @@ export class MongoEventRepository implements EventRepository {
     const collection = await this.getCollection();
     const docs = await collection.find({
       participantIds: userId,
-      expiresAt: { $gt: _now.toISOString() },
-      status: { $in: ["OPEN", "FULL"] },
+      status: { $ne: "CANCELLED" },
     }).sort({ startTime: 1 }).limit(limit).toArray();
     return docs.map(toEventRecord);
   }
