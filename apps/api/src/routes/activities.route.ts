@@ -44,12 +44,18 @@ function capitalize(text: string): string {
 }
 
 // EventStatus is a richer state machine than the UI's ActivityStatus; this
-// is a pragmatic, documented collapse rather than a 1:1 mapping — there is
-// no per-viewer "have I joined this" concept in a userId-less GET /activities.
-function toActivityStatus(status: EventStatus): ActivityStatus {
+// is a pragmatic, documented collapse rather than a 1:1 mapping. `viewerHasJoined`
+// (true when the caller's own userId is in participantIds) takes priority over
+// the event's global capacity state — otherwise "joined" only ever showed up
+// by coincidence, whenever the event happened to hit capacity, regardless of
+// whether the viewer themselves were a participant. There is still no
+// per-viewer identity on the public, unauthenticated GET /activities feed —
+// callers there pass viewerHasJoined=false and fall back to the old
+// FULL-implies-joined approximation (ActivityStatus has no "full" state).
+function toActivityStatus(status: EventStatus, viewerHasJoined: boolean): ActivityStatus {
   switch (status) {
     case "OPEN":
-      return "open";
+      return viewerHasJoined ? "joined" : "open";
     case "FULL":
       return "joined";
     case "COMPLETED":
@@ -62,8 +68,9 @@ function toActivityStatus(status: EventStatus): ActivityStatus {
 
 const PLACEHOLDER_WALKING_MINUTES = 5;
 
-function toActivity(event: EventRecord): Activity {
+function toActivity(event: EventRecord, viewerId?: string): Activity {
   const loc = locationById(event.locationId);
+  const viewerHasJoined = viewerId != null && event.participantIds.includes(viewerId);
   return {
     id: event.id,
     title: event.title,
@@ -80,7 +87,7 @@ function toActivity(event: EventRecord): Activity {
     capacity: event.capacity,
     hostId: event.hostId,
     vibe: event.vibe,
-    status: toActivityStatus(event.status),
+    status: toActivityStatus(event.status, viewerHasJoined),
   };
 }
 
@@ -107,7 +114,7 @@ export function createActivitiesRouter(deps: {
   router.get("/", async (_req, res, next) => {
     try {
       const events = await deps.eventRepository.listOpen(new Date(), 50);
-      const response: ActivitiesResponse = { activities: events.map(toActivity) };
+      const response: ActivitiesResponse = { activities: events.map((event) => toActivity(event)) };
       res.json(response);
     } catch (err) {
       next(err);
@@ -117,7 +124,7 @@ export function createActivitiesRouter(deps: {
   router.get("/mine", requireAuth, async (req, res, next) => {
     try {
       const events = await deps.eventRepository.listForUser(req.userId!, new Date(), 100);
-      const response: ActivitiesResponse = { activities: events.map(toActivity) };
+      const response: ActivitiesResponse = { activities: events.map((event) => toActivity(event, req.userId!)) };
       res.json(response);
     } catch (err) {
       next(err);
@@ -137,7 +144,7 @@ export function createActivitiesRouter(deps: {
       if (result.event.hostId !== req.userId!) {
         await notifyEventHost({ hostId: result.event.hostId, eventId: result.event.id, actorId: req.userId! });
       }
-      res.json({ status: "accepted", activity: toActivity(result.event) } satisfies JoinEventResponse);
+      res.json({ status: "accepted", activity: toActivity(result.event, req.userId!) } satisfies JoinEventResponse);
     } catch (err) {
       next(err);
     }

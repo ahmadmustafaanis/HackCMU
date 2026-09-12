@@ -4,10 +4,12 @@ import type { Activity } from "shared-types";
 import { api } from "../api/client";
 import ActivityFeedCard from "../components/ActivityFeedCard";
 import TabBar from "../components/TabBar";
+import { useSession } from "../state/session";
 
 export default function Activities() {
   const navigate = useNavigate();
   const routeLocation = useLocation();
+  const { student } = useSession();
   const [activities, setActivities] = useState<Activity[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -92,6 +94,7 @@ export default function Activities() {
               key={activity.id}
               activity={activity}
               onClick={() => navigate(`/meetup/${activity.id}`)}
+              isHost={activity.hostId === student?.id}
             />
           ))}
       </div>

@@ -1,10 +1,11 @@
 import { NavLink } from "react-router-dom";
-import { BoltIcon, HomeIcon, PeopleIcon, UserIcon } from "./Icons";
+import { BoltIcon, ChatIcon, HomeIcon, PeopleIcon, UserIcon } from "./Icons";
 
 const TABS = [
   { to: "/home", label: "Home", Icon: HomeIcon, end: true },
   { to: "/activities", label: "Activities", Icon: BoltIcon, end: false },
   { to: "/connections", label: "Connections", Icon: PeopleIcon, end: false },
+  { to: "/messages", label: "Messages", Icon: ChatIcon, end: false },
   { to: "/profile", label: "Profile", Icon: UserIcon, end: false },
 ] as const;
 

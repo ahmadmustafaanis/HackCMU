@@ -4,6 +4,7 @@ import { requireAuth } from "../auth/requireAuth.js";
 import { buildNormalizedIntent } from "../matching/intent/buildNormalizedIntent.js";
 import type { IdempotencyRunner } from "../matching/matchingService.js";
 import { buildMatchReasons, createMatch } from "../matches/matchesService.js";
+import { notifyEventHost, notifyMatched } from "../notifications/notificationService.js";
 import { resolveExplicitOrRelativeTime } from "../matching/time/resolveTime.js";
 import { extractIntentSignals } from "../matching/intent/extractIntentSignals.js";
 
@@ -112,6 +113,19 @@ export function createMatchRouter(deps: {
             status: result.outcome === "MATCHED" ? "accepted" : "suggested",
           });
           matches.push(match);
+        }
+
+        // A real join, not the "created a new, still-empty event" PENDING
+        // case: notify the requester they've been matched, and — mirroring
+        // activities.route.ts's manual "Join activity" button — notify the
+        // event's host that someone joined, since this join-into-an-existing-
+        // event path is otherwise the primary way people join activities and
+        // previously never notified the host at all.
+        if (result.outcome === "MATCHED") {
+          await notifyMatched({ userId, activityType: result.event.canonicalActivity });
+          if (result.event.hostId !== userId) {
+            await notifyEventHost({ hostId: result.event.hostId, eventId: result.event.id, actorId: userId });
+          }
         }
 
         return {

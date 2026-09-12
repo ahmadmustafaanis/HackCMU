@@ -60,6 +60,8 @@ export default function Meetup() {
     };
   }, [eventId, student?.id]);
 
+  const isParticipant = Boolean(student && activity?.attendees.includes(student.id));
+
   const joinActivity = async () => {
     if (!eventId) return;
     setJoining(true);
@@ -105,14 +107,24 @@ export default function Meetup() {
         {joinMessage && <p className="text-xs text-primary">{joinMessage}</p>}
       </div>
       <div className="mt-auto flex flex-col gap-3 pb-2">
-        <button
-          type="button"
-          onClick={joinActivity}
-          disabled={joining || loading || !activity}
-          className="w-full rounded-2xl bg-primary py-3 text-sm font-semibold text-white shadow-sm disabled:opacity-50"
-        >
-          {joining ? "Joining…" : "Join activity"}
-        </button>
+        {isParticipant ? (
+          <button
+            type="button"
+            onClick={() => navigate(`/chat/${eventId}`)}
+            className="w-full rounded-2xl bg-primary py-3 text-sm font-semibold text-white shadow-sm"
+          >
+            💬 Group chat
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={joinActivity}
+            disabled={joining || loading || !activity}
+            className="w-full rounded-2xl bg-primary py-3 text-sm font-semibold text-white shadow-sm disabled:opacity-50"
+          >
+            {joining ? "Joining…" : "Join activity"}
+          </button>
+        )}
         <button type="button" onClick={() => navigate(-1)} className="text-center text-sm font-medium text-muted underline-offset-2 hover:text-primary hover:underline">Back</button>
       </div>
     </div>

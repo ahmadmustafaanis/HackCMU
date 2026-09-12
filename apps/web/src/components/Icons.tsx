@@ -70,6 +70,14 @@ export function PeopleIcon(props: IconProps) {
   );
 }
 
+export function ChatIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M5 6.8c0-1.3 1-2.3 2.3-2.3h9.4c1.3 0 2.3 1 2.3 2.3v6.4c0 1.3-1 2.3-2.3 2.3h-6.2l-3.7 3v-3H7.3C6 15.5 5 14.5 5 13.2Z" {...stroke} />
+    </Icon>
+  );
+}
+
 export function UserIcon(props: IconProps) {
   return (
     <Icon {...props}>
