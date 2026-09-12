@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Auth0SignInButton from "../components/Auth0SignInButton";
 import Button from "../components/Button";
 import Card from "../components/Card";
+import { PawMark } from "../components/Icons";
 import GoogleSignInButton from "../components/GoogleSignInButton";
 import { api } from "../api/client";
 import { hasCompletedOnboarding } from "../lib/onboarding";
@@ -48,10 +49,12 @@ export default function Login() {
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-6 px-6 py-12">
       <Card className="flex w-full flex-col items-center gap-4 text-center">
-        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-2xl">🐾</div>
+        <div className="flex h-14 w-14 items-center justify-center rounded-[16px] bg-primary text-white">
+          <PawMark className="h-7 w-7" />
+        </div>
         <div>
-          <h1 className="text-xl font-semibold text-ink">Sign in to Scotty&apos;s Circle</h1>
-          <p className="mt-1 text-sm text-muted">Use your Google account to continue.</p>
+          <h1 className="font-display text-2xl font-medium text-ink">Sign in to Scotty&apos;s Circle</h1>
+          <p className="mt-1 text-sm text-muted">Use your Google or Auth0 account to continue.</p>
         </div>
 
         <GoogleSignInButton onCredential={handleGoogleCredential} />

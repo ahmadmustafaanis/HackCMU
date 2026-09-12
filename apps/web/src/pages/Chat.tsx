@@ -130,7 +130,7 @@ export default function Chat() {
       setMessages((prev) => prev.map((m) => (m.id === optimisticId ? sent : m)));
     } catch {
       setMessages((prev) =>
-        prev.map((m) => (m.id === optimisticId ? { ...m, timestampLabel: "Not sent — retry" } : m)),
+        prev.map((m) => (m.id === optimisticId ? { ...m, timestampLabel: "Not sent. Retry" } : m)),
       );
     } finally {
       setSending(false);
@@ -161,7 +161,7 @@ export default function Chat() {
 
         {loadState === "error" && messages.length === 0 && (
           <p className="mt-8 text-center text-sm text-muted">
-            Couldn't load messages yet — say hi to start it off.
+            Couldn&apos;t load messages yet. Say hi to start it off.
           </p>
         )}
 
@@ -190,13 +190,16 @@ export default function Chat() {
         </button>
         <div className="flex items-center gap-2">
           <input
+            id="chat-message"
+            aria-label="Message"
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter") handleSend();
             }}
             placeholder="Type a message…"
-            className="flex-1 rounded-full border border-line bg-card px-4 py-2.5 text-sm text-ink outline-none focus:border-primary"
+            autoComplete="off"
+            className="flex-1 rounded-full border border-line bg-card px-4 py-2.5 text-sm text-ink focus:border-primary"
           />
           <button
             type="button"

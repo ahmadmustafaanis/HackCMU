@@ -9,4 +9,12 @@ describe("extractIntentSignals", () => {
       locationIds: ["cohon-university-center"],
     });
   });
+
+  it("extracts relative time and location when location appears before time phrase", () => {
+    const now = new Date("2026-09-12T12:00:00.000Z");
+    expect(extractIntentSignals("treadmill at CUC in 10 mins", now)).toEqual({
+      startTime: "2026-09-12T12:10:00.000Z",
+      locationIds: ["cohon-university-center"],
+    });
+  });
 });

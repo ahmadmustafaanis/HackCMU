@@ -33,15 +33,6 @@ export default function Profile() {
   const handleReset = () => {
     const wasAuth0 = provider === "auth0";
     clearSession();
-    // A signed-in Auth0 session is Auth0's OWN SSO cookie, independent of
-    // our app session — clearSession() alone leaves it intact, so landing
-    // back on Welcome would silently re-authenticate via that lingering
-    // session instead of actually signing the user out. A real Auth0
-    // logout (full-page redirect) is the only way to end it. Checked via
-    // our OWN tracked `provider`, not useAuth0().isAuthenticated — that
-    // resets to false across a full page reload whenever this tenant's
-    // silent re-auth check can't complete without user interaction, even
-    // though the Auth0 session itself is still alive.
     if (wasAuth0) {
       auth0Logout({ logoutParams: { returnTo: window.location.origin } });
     } else {
@@ -50,9 +41,9 @@ export default function Profile() {
   };
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden">
-      <div className="flex flex-1 flex-col gap-5 overflow-y-auto p-4">
-        <h1 className="text-xl font-semibold text-ink">Profile</h1>
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <div className="feed-scroll flex min-h-0 flex-1 flex-col gap-5 p-4">
+        <h1 className="font-display text-2xl font-medium text-ink">Profile</h1>
 
         {!student && (
           <p className="rounded-2xl border border-line bg-card p-4 text-center text-sm text-muted">
@@ -67,7 +58,7 @@ export default function Profile() {
                 {student.initials}
               </div>
               <div>
-                <p className="text-lg font-semibold text-ink">{student.name}</p>
+                <p className="font-display text-xl font-medium text-ink">{student.name}</p>
                 <p className="text-sm text-muted">
                   {student.program} · {student.year}
                 </p>
@@ -103,10 +94,10 @@ export default function Profile() {
           <button
             type="button"
             onClick={handleReset}
-            className="flex items-center gap-3 border-t border-line px-4 py-3 text-left text-sm font-medium text-primary"
+            className="pressable flex items-center gap-3 border-t border-line px-4 py-3 text-left text-sm font-medium text-primary hover:bg-primary/5"
           >
             <span className="text-base">↺</span>
-            <span className="flex-1">Reset Demo</span>
+            <span className="flex-1">Sign Out / Reset Demo</span>
           </button>
         </div>
       </div>
