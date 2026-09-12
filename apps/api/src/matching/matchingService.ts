@@ -90,14 +90,14 @@ export class DefaultMatchingService implements MatchingService {
     }
   ) {}
 
-  async match(userId: string, intent: NormalizedIntent, idempotencyKey?: string): Promise<MatchResult> {
+  async match(userId: string, intent: NormalizedIntent, idempotencyKey?: string, forceCreate = false): Promise<MatchResult> {
     const now = new Date();
     const key = idempotencyKey ?? deriveFallbackIdempotencyKey(userId, intent, now);
 
-    return this.idempotencyRunner.runOnce(key, this.config.idempotencyTtlMs, () => this.runMatch(userId, intent, now));
+    return this.idempotencyRunner.runOnce(key, this.config.idempotencyTtlMs, () => this.runMatch(userId, intent, now, forceCreate));
   }
 
-  private async runMatch(userId: string, intent: NormalizedIntent, now: Date): Promise<MatchResult> {
+  private async runMatch(userId: string, intent: NormalizedIntent, now: Date, forceCreate: boolean): Promise<MatchResult> {
     const mergedIntent = await this.mergeSemanticParse(intent);
     const time = await this.resolveTime(userId, mergedIntent, now);
     const resolvedIntent: NormalizedIntent = { ...mergedIntent, startTime: time.startTime, endTime: time.endTime };
@@ -109,7 +109,7 @@ export class DefaultMatchingService implements MatchingService {
       .map((event) => ({ event, breakdown: scoreCandidate(resolvedIntent, event, this.scoringCollaborators) }))
       .sort((a, b) => b.breakdown.total - a.breakdown.total);
 
-    for (const candidate of scored) {
+    for (const candidate of forceCreate ? [] : scored) {
       if (candidate.breakdown.total < this.config.matchThreshold) {
         // Sorted descending — every remaining candidate scores lower still.
         break;
@@ -156,9 +156,10 @@ export class DefaultMatchingService implements MatchingService {
       return { startTime: intent.startTime, endTime };
     }
 
+    const fallbackStart = new Date(now.getTime() + 30 * 60_000);
     const fallback = {
-      startTime: now.toISOString(),
-      endTime: new Date(now.getTime() + durationMinutes * 60_000).toISOString(),
+      startTime: fallbackStart.toISOString(),
+      endTime: new Date(fallbackStart.getTime() + durationMinutes * 60_000).toISOString(),
     };
     return withFallback(() => this.availabilityService.getNextAvailableSlot(userId, durationMinutes), fallback);
   }

@@ -1,5 +1,6 @@
 import type {
   ActivitiesResponse,
+  ActivityResponse,
   ChatHistoryResponse,
   ConnectionsResponse,
   DebugDatabaseResponse,
@@ -69,6 +70,7 @@ export const api = {
   recommend: (body: RecommendRequest) => post<RecommendRequest, RecommendResponse>("/recommend", body),
   match: (body: MatchRequest) => post<MatchRequest, MatchResponse>("/match", body),
   getActivities: () => request<ActivitiesResponse>("/activities"),
+  getActivity: (eventId: string) => request<ActivityResponse>(`/activities/${eventId}`),
   getMyActivities: () => request<ActivitiesResponse>("/activities/mine"),
   joinEvent: (eventId: string) => post<{ eventId: string }, JoinEventResponse>(`/activities/${eventId}/join`, { eventId }),
   invite: (eventId: string, body: InviteRequest) => post<InviteRequest, InviteResponse>(`/activities/${eventId}/invite`, body),

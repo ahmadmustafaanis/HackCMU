@@ -130,7 +130,7 @@ export function createActivitiesRouter(deps: {
       const eventId = req.params.eventId || body.eventId;
       const result = await deps.eventRepository.joinIfValid(eventId, req.userId!, new Date());
       if (!result.ok) {
-        const status: JoinEventResponse["status"] = result.reason === "FULL" ? "full" : result.reason === "EXPIRED" ? "expired" : result.reason === "NOT_FOUND" ? "not_found" : "expired";
+        const status: JoinEventResponse["status"] = result.reason === "ALREADY_JOINED" ? "accepted" : result.reason === "FULL" ? "full" : result.reason === "EXPIRED" ? "expired" : result.reason === "NOT_FOUND" ? "not_found" : "expired";
         res.json({ status } satisfies JoinEventResponse);
         return;
       }
@@ -151,6 +151,20 @@ export function createActivitiesRouter(deps: {
     try {
       const activityIds = await deps.recommendationService.suggestActivities(req.userId!);
       const response: SuggestionsResponse = { activityIds };
+      res.json(response);
+    } catch (err) {
+      next(err);
+    }
+  });
+
+  router.get("/:eventId", async (req, res, next) => {
+    try {
+      const event = await deps.eventRepository.getById(req.params.eventId);
+      if (!event) {
+        res.status(404).json({ error: "activity not found" });
+        return;
+      }
+      const response: { activity: Activity } = { activity: toActivity(event) };
       res.json(response);
     } catch (err) {
       next(err);

@@ -66,9 +66,11 @@ export interface MatchRequest {
   userId: string;
   intent: StructuredIntentInput;
   idempotencyKey?: string;
+  forceCreate?: boolean;
 }
 export interface MatchResponse {
   outcome: "MATCHED" | "PENDING";
+  eventType?: "MATCHED_EXISTING" | "CREATED";
   eventId: string;
   /** Ranked candidate people for the Match Results screen — the top
    * candidate is the one actually joined/created; the rest are shown as
@@ -79,6 +81,10 @@ export interface MatchResponse {
 // GET /api/activities  (Discover / trending)
 export interface ActivitiesResponse {
   activities: Activity[];
+}
+
+export interface ActivityResponse {
+  activity: Activity;
 }
 
 export interface JoinEventRequest {

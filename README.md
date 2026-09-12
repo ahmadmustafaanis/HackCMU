@@ -50,4 +50,7 @@ is reserved for novel activity meaning.
 
 In non-production environments, `/debug/database` displays bounded snapshots of
 Mongo collections for debugging. It is read-only and intentionally disabled by
-the API in production.
+the API in production. Start `npm run dev`, sign in, then open
+`http://localhost:5173/debug/database`; the page shows users, events, matches,
+chat, feedback, connections, notifications, and idempotency records. The raw
+API response is also available at `http://localhost:4000/api/debug/database`.

@@ -19,8 +19,6 @@ interface ActivityFeedCardProps {
 }
 
 export default function ActivityFeedCard({ activity, onClick, highlighted = false }: ActivityFeedCardProps) {
-  const spotsLeft = Math.max(activity.capacity - activity.attendeeCount, 0);
-
   return (
     <button
       type="button"
@@ -51,10 +49,7 @@ export default function ActivityFeedCard({ activity, onClick, highlighted = fals
         <span className="rounded-full border border-line px-2.5 py-1 text-[11px] font-medium text-muted">
           {activity.vibe}
         </span>
-        <span className="text-xs text-muted">
-          {activity.attendeeCount}/{activity.capacity} joined
-          {activity.status === "open" && spotsLeft > 0 ? ` · ${spotsLeft} spot${spotsLeft === 1 ? "" : "s"} left` : ""}
-        </span>
+        <span className="text-xs text-muted">{activity.attendeeCount} going</span>
       </div>
     </button>
   );

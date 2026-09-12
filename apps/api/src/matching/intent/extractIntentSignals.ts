@@ -31,8 +31,12 @@ export function extractIntentSignals(sourceText: string | undefined, now = new D
   }
 
   const normalized = sourceText.toLowerCase();
+  const isMentioned = (alias: string) => {
+    const escaped = alias.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return new RegExp(`(^|\\s)${escaped}(?=$|\\s|[,.;!?])`, "i").test(normalized);
+  };
   const locationIds = locationAliases()
-    .filter(({ aliases }) => aliases.some((alias) => normalized.includes(alias)))
+    .filter(({ aliases }) => aliases.some(isMentioned))
     .map(({ id }) => id);
 
   return { startTime, locationIds: Array.from(new Set(locationIds)) };

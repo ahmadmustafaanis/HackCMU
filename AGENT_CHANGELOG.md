@@ -38,6 +38,19 @@ Newest entries go at the top. Keep each entry short: intent, files, follow-ups.
   screen; toggle "Skip User Consent" in the Auth0 dashboard's Advanced
   Settings if that's undesired for the demo.
 
+## 2026-09-12 — Matched event results and activity freshness
+
+- Filtered expired/closed My Activities records, added now-plus-30-minute
+  defaults, and replaced person-centric match results with event details and
+  explicit join success state.
+- Fixed free-text relative-time precedence, tightened building alias matching,
+  requested Home geolocation on load, and removed capacity/spot copy in favor
+  of `N going`.
+- Files: matching availability/repository/routes, MatchResults/Home/heatmap,
+  shared API contracts, README.md, SPEC.md, and tests.
+- Follow-up: add browser-level coverage for permission-denied geolocation and
+  the matched-event join flow.
+
 ## 2026-09-12 — Intent, location, activity lifecycle, and notifications
 
 - Removed the deprecated onboarding availability step; added deterministic
